@@ -1,0 +1,14 @@
+.header {
+    background-color: black;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: xx-large;
+    color: white;
+    width: max-content;
+    height: 200px;
+    margin-left: auto;
+    margin-right: auto;
+    
+}
+cyroz-cirlce {
+    size: 10%;
+}
