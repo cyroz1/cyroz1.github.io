@@ -1,1 +1,1 @@
-# Source code for [cyroz.net]{https://cyroz.net/}
+# Source code for [cyroz.net]{https://cyroz.net}
