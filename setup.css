@@ -1,6 +1,13 @@
 body, html {
-    margin: 0;
+    margin: 30px;
     padding: 0;
     box-sizing: border-box;
     background-color: rgb(26, 26, 26);
+    color: white;
+    font-family: Roboto;
+    font-size: x-large;
+}
+
+a {
+    color: white;
 }
