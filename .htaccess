@@ -5,3 +5,6 @@ RewriteRule ^tweak$ tweak.html [L]
 
 # Redirect /setup to /setup.html
 RewriteRule ^setup$ setup.html [L]
+
+# Redirect /vidcord to github
+Redirect 301 /vidcord https://github.com/cyroz1/vidcord/
