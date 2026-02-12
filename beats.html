@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="cyroz - Buy beats and instrumentals">
+    <meta name="keywords" content="cyroz, beats, instrumentals, buy beats, producer">
+    <meta name="author" content="cyroz">
+    <meta property="og:title" content="cyroz - Beats">
+    <meta property="og:description" content="Buy beats and instrumentals">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cyroz1.github.io/beats.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <title>Beats - cyroz</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="beats.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="bg-canvas">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+        <div class="glow-cursor" id="glowCursor"></div>
+    </div>
+
+    <main class="container">
+        <header class="hero">
+            <h1>Beats</h1>
+            <p>Preview and purchase instrumentals — send $30 via PayPal and include the beat name</p>
+        </header>
+
+        <!-- Beat cards are dynamically injected here -->
+        <div class="beats-grid" id="beatsGrid">
+            <div class="beats-loading" id="beatsLoading">
+                <div class="loading-spinner"></div>
+                <span>Loading beats...</span>
+            </div>
+        </div>
+
+        <div class="back-wrapper">
+            <a href="index.html" class="back-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Home
+            </a>
+        </div>
+    </main>
+
+    <script>
+        // ============================================================
+        //  CONFIG — Update these values
+        // ============================================================
+        const CONFIG = {
+            // Google Drive folder ID (from your shared folder URL)
+            FOLDER_ID: '1LCxTPh6hYsNyXZ5dvnokackviwAKHvLi',
+
+            // Google API key — get one free at:
+            //   https://console.cloud.google.com/apis/credentials
+            //   Enable "Google Drive API" and create an API key.
+            //   Restrict it to your domain (cyroz1.github.io) for safety.
+            API_KEY: 'AIzaSyCpy-rEO1nopWSSWFuvrWDpelidsV2gpl4',
+
+            // PayPal
+            PAYPAL_EMAIL: 'cyrozv@gmail.com',
+            DEFAULT_PRICE: 30,
+            CURRENCY: 'USD',
+        };
+
+        // ============================================================
+        //  SVG ICONS
+        // ============================================================
+        const PAYPAL_ICON = `<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/></svg>`;
+
+
+
+        // ============================================================
+        //  HELPERS
+        // ============================================================
+
+        /** Strip file extension and clean up the name */
+        function beatNameFromFile(filename) {
+            return filename
+                .replace(/\.[^.]+$/, '')       // remove extension
+                .replace(/[_-]/g, ' ')         // underscores/hyphens → spaces
+                .replace(/\s+/g, ' ')          // collapse whitespace
+                .trim();
+        }
+
+        /** Build a PayPal "Buy Now" URL */
+        function paypalUrl(beatName, price) {
+            const params = new URLSearchParams({
+                cmd: '_xclick',
+                business: CONFIG.PAYPAL_EMAIL,
+                item_name: `${beatName} (Beat Lease)`,
+                amount: price,
+                currency_code: CONFIG.CURRENCY,
+                no_shipping: '1',
+            });
+            return `https://www.paypal.com/cgi-bin/webscr?${params}`;
+        }
+
+        /** Google Drive streaming URL (for audio preview) */
+        function driveStreamUrl(fileId) {
+            return `https://docs.google.com/uc?export=open&id=${fileId}`;
+        }
+
+        // ============================================================
+        //  RENDER A BEAT CARD
+        // ============================================================
+        function createBeatCard(file, index) {
+            const name = beatNameFromFile(file.name);
+            const price = CONFIG.DEFAULT_PRICE;
+            const streamSrc = driveStreamUrl(file.id);
+
+            const card = document.createElement('div');
+            card.className = 'beat-card';
+            card.style.setProperty('--delay', index);
+
+            card.innerHTML = `
+                <div class="beat-header">
+                    <span class="beat-name">${name}</span>
+                    <span class="beat-price">$${price}</span>
+                </div>
+                <span class="beat-tag">Beat Lease</span>
+                <audio class="beat-player" controls controlsList="nodownload" preload="none"
+                       oncontextmenu="return false">
+                    <source src="${streamSrc}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <div class="beat-actions">
+                    <a class="btn-buy" href="${paypalUrl(name, price)}"
+                       target="_blank" rel="noopener noreferrer">
+                        ${PAYPAL_ICON} Buy — $${price}
+                    </a>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // ============================================================
+        //  FETCH BEATS FROM GOOGLE DRIVE
+        // ============================================================
+        async function loadBeats() {
+            const grid = document.getElementById('beatsGrid');
+            const loading = document.getElementById('beatsLoading');
+
+            try {
+                const apiUrl = `https://www.googleapis.com/drive/v3/files?` +
+                    `q='${CONFIG.FOLDER_ID}'+in+parents+and+trashed=false` +
+                    `&key=${CONFIG.API_KEY}` +
+                    `&fields=files(id,name,mimeType)` +
+                    `&orderBy=name` +
+                    `&pageSize=100`;
+
+                const res = await fetch(apiUrl);
+
+                if (!res.ok) {
+                    throw new Error(`API returned ${res.status}`);
+                }
+
+                const data = await res.json();
+
+                // Filter for audio files only
+                const audioFiles = (data.files || []).filter(f =>
+                    f.mimeType && (
+                        f.mimeType.startsWith('audio/') ||
+                        f.name.match(/\.(mp3|wav|flac|ogg|m4a|aac)$/i)
+                    )
+                );
+
+                // Remove loading state
+                loading.remove();
+
+                if (audioFiles.length === 0) {
+                    grid.innerHTML = `
+                        <div class="beats-empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 18V5l12-2v13"/>
+                                <circle cx="6" cy="18" r="3"/>
+                                <circle cx="18" cy="16" r="3"/>
+                            </svg>
+                            <p>No beats available right now. Check back soon!</p>
+                        </div>`;
+                    return;
+                }
+
+                // Render each beat card
+                audioFiles.forEach((file, i) => {
+                    grid.appendChild(createBeatCard(file, i));
+                });
+
+            } catch (err) {
+                console.error('Failed to load beats:', err);
+                loading.innerHTML = `
+                    <div class="beats-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <p>Couldn't load beats. Please try again later.</p>
+                    </div>`;
+            }
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', loadBeats);
+
+        // Cursor glow effect
+        const cursor = document.getElementById('glowCursor');
+        let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+        let tx = cx, ty = cy;
+
+        document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+
+        (function animate() {
+            cx += (tx - cx) * 0.08;
+            cy += (ty - cy) * 0.08;
+            cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
+            requestAnimationFrame(animate);
+        })();
+    </script>
+</body>
+
+</html>
