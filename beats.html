@@ -204,10 +204,12 @@
                     return;
                 }
 
-                // Render each beat card
+                // Render cards in one batch to avoid repeated reflow/repaint cost.
+                const fragment = document.createDocumentFragment();
                 audioFiles.forEach((file, i) => {
-                    grid.appendChild(createBeatCard(file, i));
+                    fragment.appendChild(createBeatCard(file, i));
                 });
+                grid.appendChild(fragment);
 
                 // Initialize lazy loading observer
                 initLazyLoading();
@@ -227,41 +229,120 @@
             }
         }
 
-        /** Dynamic iframe creation/destruction using IntersectionObserver */
+        const PLAYER_LAZY_CONFIG = {
+            preloadMarginPx: 280,
+            unloadDelayMs: 1500,
+            maxActivePlayers: window.matchMedia('(max-width: 640px)').matches ? 4 : 6,
+        };
+
+        /**
+         * Dynamic iframe lifecycle with bounded active players.
+         * This prevents large memory spikes while scrolling long beat lists.
+         */
         function initLazyLoading() {
             const wrappers = document.querySelectorAll('.beat-player-wrapper');
+            const activePlayers = new Map();
+            const pendingUnloads = new Map();
+            const visibleWrappers = new Set();
+            const lru = [];
+
+            function touchWrapper(wrapper) {
+                const index = lru.indexOf(wrapper);
+                if (index !== -1) {
+                    lru.splice(index, 1);
+                }
+                lru.push(wrapper);
+            }
+
+            function unloadPlayer(wrapper) {
+                const iframe = activePlayers.get(wrapper) || wrapper.querySelector('iframe');
+                if (!iframe) return;
+
+                iframe.src = 'about:blank';
+                iframe.remove();
+                activePlayers.delete(wrapper);
+
+                const index = lru.indexOf(wrapper);
+                if (index !== -1) {
+                    lru.splice(index, 1);
+                }
+            }
+
+            function enforcePlayerLimit(currentWrapper) {
+                if (activePlayers.size <= PLAYER_LAZY_CONFIG.maxActivePlayers) return;
+
+                while (activePlayers.size > PLAYER_LAZY_CONFIG.maxActivePlayers) {
+                    const candidate = lru.find(w => w !== currentWrapper && !visibleWrappers.has(w));
+                    if (!candidate) break;
+                    unloadPlayer(candidate);
+                }
+            }
+
+            function cancelUnload(wrapper) {
+                const timeoutId = pendingUnloads.get(wrapper);
+                if (!timeoutId) return;
+                clearTimeout(timeoutId);
+                pendingUnloads.delete(wrapper);
+            }
+
+            function scheduleUnload(wrapper) {
+                if (pendingUnloads.has(wrapper)) return;
+                const timeoutId = setTimeout(() => {
+                    pendingUnloads.delete(wrapper);
+                    if (visibleWrappers.has(wrapper)) return;
+                    unloadPlayer(wrapper);
+                }, PLAYER_LAZY_CONFIG.unloadDelayMs);
+                pendingUnloads.set(wrapper, timeoutId);
+            }
+
+            function loadPlayer(wrapper) {
+                cancelUnload(wrapper);
+
+                if (activePlayers.has(wrapper)) {
+                    touchWrapper(wrapper);
+                    return;
+                }
+
+                const src = wrapper.getAttribute('data-src');
+                if (!src) return;
+
+                const iframe = document.createElement('iframe');
+                iframe.className = 'beat-player';
+                iframe.loading = 'lazy';
+                iframe.src = src;
+                iframe.setAttribute('allow', 'autoplay');
+                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+
+                wrapper.appendChild(iframe);
+                activePlayers.set(wrapper, iframe);
+                touchWrapper(wrapper);
+                enforcePlayerLimit(wrapper);
+            }
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const wrapper = entry.target;
-                    const src = wrapper.getAttribute('data-src');
-                    let iframe = wrapper.querySelector('iframe');
-
                     if (entry.isIntersecting) {
-                        // Create iframe if it doesn't exist
-                        if (!iframe) {
-                            console.log('Loading player for:', src);
-                            iframe = document.createElement('iframe');
-                            iframe.className = 'beat-player';
-                            iframe.src = src;
-                            iframe.setAttribute('allow', 'autoplay');
-                            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-                            wrapper.appendChild(iframe);
-                        }
+                        visibleWrappers.add(wrapper);
+                        loadPlayer(wrapper);
                     } else {
-                        // Completely remove iframe to force memory reclamation
-                        if (iframe) {
-                            console.log('Unloading player for:', src);
-                            iframe.remove();
-                        }
+                        visibleWrappers.delete(wrapper);
+                        scheduleUnload(wrapper);
                     }
                 });
             }, {
-                rootMargin: '1000px 0px', // Larger margin to hide recreation latency
-                threshold: 0.01
+                rootMargin: `${PLAYER_LAZY_CONFIG.preloadMarginPx}px 0px`,
+                threshold: 0.1
             });
 
             wrappers.forEach(w => observer.observe(w));
+
+            window.addEventListener('pagehide', () => {
+                observer.disconnect();
+                pendingUnloads.forEach(timeoutId => clearTimeout(timeoutId));
+                pendingUnloads.clear();
+                activePlayers.forEach((_, wrapper) => unloadPlayer(wrapper));
+            }, { once: true });
         }
 
         // ============================================================
