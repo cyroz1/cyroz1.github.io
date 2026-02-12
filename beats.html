@@ -32,10 +32,21 @@
     <main class="container">
         <header class="hero">
             <h1>Beats</h1>
-            <p>Preview and purchase instrumentals — send $30 via PayPal and include the beat name</p>
+            <p>Preview and purchase instrumentals</p>
         </header>
 
         <!-- Beat cards are dynamically injected here -->
+        <div class="back-wrapper" style="margin-bottom: 32px;">
+            <a href="index.html" class="back-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Home
+            </a>
+        </div>
+
         <div class="beats-grid" id="beatsGrid">
             <div class="beats-loading" id="beatsLoading">
                 <div class="loading-spinner"></div>
