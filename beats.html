@@ -142,9 +142,11 @@
                     <span class="beat-price">$${price}</span>
                 </div>
                 <span class="beat-tag">Beat Lease</span>
-                <iframe class="beat-player" src="${previewSrc}"
-                        allow="autoplay" sandbox="allow-scripts allow-same-origin"
-                        loading="lazy"></iframe>
+                <div class="beat-player-wrapper">
+                    <iframe class="beat-player lazy-iframe" data-src="${previewSrc}"
+                            allow="autoplay" sandbox="allow-scripts allow-same-origin"
+                            loading="lazy"></iframe>
+                </div>
                 <div class="beat-actions">
                     <a class="btn-buy" href="${paypalUrl(name, price)}"
                        target="_blank" rel="noopener noreferrer">
@@ -209,6 +211,9 @@
                     grid.appendChild(createBeatCard(file, i));
                 });
 
+                // Initialize lazy loading observer
+                initLazyLoading();
+
             } catch (err) {
                 console.error('Failed to load beats:', err);
                 loading.innerHTML = `
@@ -224,24 +229,49 @@
             }
         }
 
+        /** Lazy load iframes using IntersectionObserver */
+        function initLazyLoading() {
+            const iframes = document.querySelectorAll('.lazy-iframe');
+
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const iframe = entry.target;
+                        iframe.src = iframe.getAttribute('data-src');
+                        iframe.classList.remove('lazy-iframe');
+                        obs.unobserve(iframe);
+                    }
+                });
+            }, {
+                rootMargin: '200px 0px', // Load slightly before they come into view
+                threshold: 0.01
+            });
+
+            iframes.forEach(iframe => observer.observe(iframe));
+        }
+
         // ============================================================
         //  INIT
         // ============================================================
         document.addEventListener('DOMContentLoaded', loadBeats);
 
-        // Cursor glow effect
+        // Cursor glow effect - only run on devices with a mouse
         const cursor = document.getElementById('glowCursor');
-        let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-        let tx = cx, ty = cy;
+        if (window.matchMedia('(pointer: fine)').matches && cursor) {
+            let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+            let tx = cx, ty = cy;
 
-        document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+            document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
 
-        (function animate() {
-            cx += (tx - cx) * 0.08;
-            cy += (ty - cy) * 0.08;
-            cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
-            requestAnimationFrame(animate);
-        })();
+            (function animate() {
+                cx += (tx - cx) * 0.08;
+                cy += (ty - cy) * 0.08;
+                cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
+                requestAnimationFrame(animate);
+            })();
+        } else if (cursor) {
+            cursor.style.display = 'none';
+        }
     </script>
 </body>
 

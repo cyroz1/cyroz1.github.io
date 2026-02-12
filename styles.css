@@ -46,9 +46,14 @@ body {
 .glow {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(80px);
+  /* Reduced from 100px */
   pointer-events: none;
-  opacity: 0.45;
+  opacity: 0.35;
+  /* Reduced from 0.45 */
+  will-change: transform;
+  transform: translateZ(0);
+  /* Force GPU */
 }
 
 .glow-1 {
@@ -88,8 +93,10 @@ body {
   background: radial-gradient(circle, rgba(255, 215, 0, 0.12) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
-  filter: blur(60px);
+  filter: blur(50px);
+  /* Slightly reduced */
   will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes drift1 {
@@ -311,6 +318,34 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 215, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .glow {
+    filter: blur(50px);
+    opacity: 0.2;
+  }
+
+  .glow-1 {
+    width: 400px;
+    height: 400px;
+  }
+
+  .glow-2 {
+    width: 300px;
+    height: 300px;
+  }
+
+  .glow-3 {
+    width: 250px;
+    height: 250px;
+  }
+
+  .link-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(20, 20, 20, 0.8) !important;
+  }
 }
 
 /* ===== RESPONSIVE ===== */
