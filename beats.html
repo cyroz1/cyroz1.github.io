@@ -240,18 +240,18 @@
                     if (entry.isIntersecting) {
                         // Create iframe if it doesn't exist
                         if (!iframe) {
+                            console.log('Loading player for:', src);
                             iframe = document.createElement('iframe');
                             iframe.className = 'beat-player';
                             iframe.src = src;
                             iframe.setAttribute('allow', 'autoplay');
-                            iframe.setAttribute('sandbox', 'allow-scripts');
-                            // loading="lazy" is still good as an extra layer
-                            iframe.setAttribute('loading', 'lazy');
+                            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
                             wrapper.appendChild(iframe);
                         }
                     } else {
                         // Completely remove iframe to force memory reclamation
                         if (iframe) {
+                            console.log('Unloading player for:', src);
                             iframe.remove();
                         }
                     }
