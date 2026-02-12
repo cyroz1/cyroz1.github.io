@@ -93,10 +93,11 @@
 
             return {
                 isMobile,
-                preloadMarginPx: isMobile ? 0 : 280,
-                unloadDelayMs: isMobile ? 300 : 1500,
-                maxActivePlayers: isMobile ? 1 : 6,
-                tapToLoadPreviews: isMobile,
+                isCoarsePointer,
+                preloadMarginPx: 0,
+                unloadDelayMs: isMobile ? 300 : 900,
+                maxActivePlayers: 1,
+                clickToLoadPreviews: true,
             };
         })();
 
@@ -157,7 +158,7 @@
                 </div>
                 <span class="beat-tag">Beat Lease</span>
                 <div class="beat-player-wrapper" data-src="${previewSrc}">
-                    ${PERF_PROFILE.tapToLoadPreviews ? '<button class="preview-trigger" type="button">Tap to load preview</button>' : ''}
+                    ${PERF_PROFILE.clickToLoadPreviews ? `<button class="preview-trigger" type="button">${PERF_PROFILE.isCoarsePointer ? 'Tap' : 'Click'} to load preview</button>` : ''}
                 </div>
                 <div class="beat-actions">
                     <a class="btn-buy" href="${paypalUrl(name, price)}"
@@ -280,7 +281,7 @@
                 if (trigger) {
                     trigger.hidden = false;
                     trigger.disabled = false;
-                    trigger.textContent = 'Tap to load preview';
+                    trigger.textContent = `${PERF_PROFILE.isCoarsePointer ? 'Tap' : 'Click'} to load preview`;
                 }
 
                 const index = lru.indexOf(wrapper);
@@ -293,7 +294,9 @@
                 if (activePlayers.size <= PLAYER_LAZY_CONFIG.maxActivePlayers) return;
 
                 while (activePlayers.size > PLAYER_LAZY_CONFIG.maxActivePlayers) {
-                    const candidate = lru.find(w => w !== currentWrapper && !visibleWrappers.has(w));
+                    const candidate =
+                        lru.find(w => w !== currentWrapper && !visibleWrappers.has(w)) ||
+                        lru.find(w => w !== currentWrapper);
                     if (!candidate) break;
                     unloadPlayer(candidate);
                 }
@@ -319,7 +322,7 @@
             function loadPlayer(wrapper, fromUserGesture = false) {
                 cancelUnload(wrapper);
 
-                if (PERF_PROFILE.tapToLoadPreviews && !fromUserGesture) {
+                if (PERF_PROFILE.clickToLoadPreviews && !fromUserGesture) {
                     return;
                 }
 
@@ -328,7 +331,7 @@
                     return;
                 }
 
-                if (PERF_PROFILE.tapToLoadPreviews) {
+                if (PERF_PROFILE.clickToLoadPreviews) {
                     activePlayers.forEach((_, activeWrapper) => {
                         if (activeWrapper !== wrapper) {
                             unloadPlayer(activeWrapper);
@@ -362,7 +365,7 @@
                 iframe.addEventListener('error', () => {
                     unloadPlayer(wrapper);
                     if (trigger) {
-                        trigger.textContent = 'Tap to retry preview';
+                        trigger.textContent = `${PERF_PROFILE.isCoarsePointer ? 'Tap' : 'Click'} to retry preview`;
                     }
                 }, { once: true });
 
@@ -390,7 +393,7 @@
 
             wrappers.forEach(w => observer.observe(w));
 
-            if (PERF_PROFILE.tapToLoadPreviews) {
+            if (PERF_PROFILE.clickToLoadPreviews) {
                 wrappers.forEach(wrapper => {
                     const trigger = wrapper.querySelector('.preview-trigger');
                     if (!trigger) return;
