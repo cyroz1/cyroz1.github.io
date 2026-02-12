@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,58 +17,240 @@
     <link rel="stylesheet" href="setup.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
-    <div class="container">
-        <h1>Setup</h1>
-        <div class="setup-grid">
-            <div class="setup-item">
-                <p>PC: <a href="https://pcpartpicker.com/user/cyr6z/saved/#view=QsbTrH" target="_blank" rel="noopener noreferrer">Parts List</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Optimization: <a href="https://atlasos.net/" target="_blank" rel="noopener noreferrer">AtlasOS</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Monitor: <a href="https://a.co/d/hwIRbhm" target="_blank" rel="noopener noreferrer">KTC G27P6 27" 1440p 240Hz OLED</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Second Monitor: <a href="https://a.co/d/dhPc3pY" target="_blank" rel="noopener noreferrer">DELL S2522HG 24.5" 1080p 240Hz IPS</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Monitor Arms: <a href="https://a.co/d/2Th6EFp" target="_blank" rel="noopener noreferrer">HUANUO Dual Monitor Stand</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Keyboard: <a href="https://madlionskeyboard.com/product/mad60he/" target="_blank" rel="noopener noreferrer">Madlions MAD 60 HE (PRO)</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Mouse: <a href="https://scyrox.com/products/scyrox-v8?variant=41125308530750" target="_blank" rel="noopener noreferrer">Scyrox V8 (White)</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Mousepad: <a href="https://artisan-jp.com/global/fx-raiden" target="_blank" rel="noopener noreferrer">Artisan FX Raiden Soft XL Orange</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Headphones: <a href="https://truthear.com/products/nova" target="_blank" rel="noopener noreferrer">Truthear Nova</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Microphone: <a href="https://a.co/d/484D3ks" target="_blank" rel="noopener noreferrer">Audio-Technica AT2020</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Audio Interface: <a href="https://a.co/d/e5jVWsV" target="_blank" rel="noopener noreferrer">Focusrite Scarlett Solo 4th Gen</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Camera: <a href="https://a.co/d/1DhUBHQ" target="_blank" rel="noopener noreferrer">Sony Alpha A6100 + Viltrox AF 35mm F1.7 Air</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Desk: <a href="https://www.ikea.com/us/en/p/lagkapten-adils-desk-white-s29416758/#content" target="_blank" rel="noopener noreferrer">IKEA LAGKAPTEN / ADILS</a></p>
-            </div>
-            <div class="setup-item">
-                <p>Chair: <a href="https://a.co/d/1aMG9Xk" target="_blank" rel="noopener noreferrer">KOLLIEE Armless Office Chair</a></p>
-            </div>
-        </div>
-        <div style="text-align: center;">
-            <a href="index.html" class="back-button">← Back to Home</a>
-        </div>
+    <div class="bg-canvas">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+        <div class="glow-cursor" id="glowCursor"></div>
     </div>
+
+    <main class="container">
+        <header class="hero">
+            <h1>Setup</h1>
+        </header>
+
+        <div class="setup-grid">
+            <div class="setup-item" style="--delay: 0">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">PC</span>
+                    <a href="https://pcpartpicker.com/user/cyr6z/saved/#view=QsbTrH" target="_blank"
+                        rel="noopener noreferrer">Parts List</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 1">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Optimization</span>
+                    <a href="https://atlasos.net/" target="_blank" rel="noopener noreferrer">AtlasOS</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 2">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="2" y1="17" x2="22" y2="17" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Monitor</span>
+                    <a href="https://a.co/d/hwIRbhm" target="_blank" rel="noopener noreferrer">KTC G27P6 27" 1440p 240Hz
+                        OLED</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 3">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="2" y1="17" x2="22" y2="17" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Second Monitor</span>
+                    <a href="https://a.co/d/dhPc3pY" target="_blank" rel="noopener noreferrer">DELL S2522HG 24.5" 1080p
+                        240Hz IPS</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 4">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="2" x2="12" y2="22" />
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Monitor Arms</span>
+                    <a href="https://a.co/d/2Th6EFp" target="_blank" rel="noopener noreferrer">HUANUO Dual Monitor
+                        Stand</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 5">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M6 16h12" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Keyboard</span>
+                    <a href="https://madlionskeyboard.com/product/mad60he/" target="_blank"
+                        rel="noopener noreferrer">Madlions MAD 60 HE (PRO)</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 6">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 17V7a2 2 0 0 1 2-2h4l2 2h4a2 2 0 0 1 2 2v2" />
+                    <path d="M12 17a4 4 0 1 0 8 0 4 4 0 1 0-8 0" />
+                    <circle cx="16" cy="17" r="1" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Mouse</span>
+                    <a href="https://scyrox.com/products/scyrox-v8?variant=41125308530750" target="_blank"
+                        rel="noopener noreferrer">Scyrox V8 (White)</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 7">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Mousepad</span>
+                    <a href="https://artisan-jp.com/global/fx-raiden" target="_blank" rel="noopener noreferrer">Artisan
+                        FX Raiden Soft XL Orange</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 8">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+                    <path
+                        d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Headphones</span>
+                    <a href="https://truthear.com/products/nova" target="_blank" rel="noopener noreferrer">Truthear
+                        Nova</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 9">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M12 5a4 4 0 0 1 4 4v4a4 4 0 0 1-8 0V9a4 4 0 0 1 4-4z" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Microphone</span>
+                    <a href="https://a.co/d/484D3ks" target="_blank" rel="noopener noreferrer">Audio-Technica AT2020</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 10">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 10v3a1 1 0 0 0 1 1h3" />
+                    <path d="M22 10v3a1 1 0 0 1-1 1h-3" />
+                    <rect x="6" y="4" width="12" height="16" rx="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <line x1="12" y1="8" x2="12" y2="8.01" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Audio Interface</span>
+                    <a href="https://a.co/d/e5jVWsV" target="_blank" rel="noopener noreferrer">Focusrite Scarlett Solo
+                        4th Gen</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 11">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Camera</span>
+                    <a href="https://a.co/d/1DhUBHQ" target="_blank" rel="noopener noreferrer">Sony Alpha A6100 +
+                        Viltrox AF 35mm F1.7 Air</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 12">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="6" width="20" height="12" rx="2" />
+                    <line x1="2" y1="18" x2="22" y2="18" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Desk</span>
+                    <a href="https://www.ikea.com/us/en/p/lagkapten-adils-desk-white-s29416758/#content" target="_blank"
+                        rel="noopener noreferrer">IKEA LAGKAPTEN / ADILS</a>
+                </div>
+            </div>
+
+            <div class="setup-item" style="--delay: 13">
+                <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 18h10" />
+                    <path d="M12 18v4" />
+                    <path d="M5 14a7 7 0 0 1 7-7 7 7 0 0 1 7 7v0H5z" />
+                    <line x1="9" y1="22" x2="15" y2="22" />
+                </svg>
+                <div class="item-content">
+                    <span class="item-label">Chair</span>
+                    <a href="https://a.co/d/1aMG9Xk" target="_blank" rel="noopener noreferrer">KOLLIEE Armless Office
+                        Chair</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="back-wrapper">
+            <a href="index.html" class="back-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Home
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const cursor = document.getElementById('glowCursor');
+        let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+        let tx = cx, ty = cy;
+
+        document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+
+        (function animate() {
+            cx += (tx - cx) * 0.08;
+            cy += (ty - cy) * 0.08;
+            cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
+            requestAnimationFrame(animate);
+        })();
+    </script>
 </body>
+
 </html>
