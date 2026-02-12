@@ -229,21 +229,29 @@
             }
         }
 
-        /** Lazy load iframes using IntersectionObserver */
+        /** Lazy load/unload iframes using IntersectionObserver */
         function initLazyLoading() {
-            const iframes = document.querySelectorAll('.lazy-iframe');
+            const iframes = document.querySelectorAll('.beat-player');
 
-            const observer = new IntersectionObserver((entries, obs) => {
+            const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
+                    const iframe = entry.target;
+                    const src = iframe.getAttribute('data-src');
+
                     if (entry.isIntersecting) {
-                        const iframe = entry.target;
-                        iframe.src = iframe.getAttribute('data-src');
-                        iframe.classList.remove('lazy-iframe');
-                        obs.unobserve(iframe);
+                        // Load iframe when it enters viewport
+                        if (iframe.src !== src) {
+                            iframe.src = src;
+                        }
+                    } else {
+                        // Unload iframe when it leaves viewport to save memory
+                        if (iframe.src !== 'about:blank' && iframe.src !== '') {
+                            iframe.src = 'about:blank';
+                        }
                     }
                 });
             }, {
-                rootMargin: '200px 0px', // Load slightly before they come into view
+                rootMargin: '600px 0px', // Load well before they come into view for better UX
                 threshold: 0.01
             });
 
