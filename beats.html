@@ -86,6 +86,20 @@
             CURRENCY: 'USD',
         };
 
+        const PERF_PROFILE = (() => {
+            const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+            const isNarrowScreen = window.matchMedia('(max-width: 768px)').matches;
+            const isMobile = isCoarsePointer || isNarrowScreen;
+
+            return {
+                isMobile,
+                preloadMarginPx: isMobile ? 0 : 280,
+                unloadDelayMs: isMobile ? 300 : 1500,
+                maxActivePlayers: isMobile ? 1 : 6,
+                tapToLoadPreviews: isMobile,
+            };
+        })();
+
         // ============================================================
         //  SVG ICONS
         // ============================================================
@@ -143,7 +157,7 @@
                 </div>
                 <span class="beat-tag">Beat Lease</span>
                 <div class="beat-player-wrapper" data-src="${previewSrc}">
-                    <!-- Iframe dynamically injected/removed for memory optimization -->
+                    ${PERF_PROFILE.tapToLoadPreviews ? '<button class="preview-trigger" type="button">Tap to load preview</button>' : ''}
                 </div>
                 <div class="beat-actions">
                     <a class="btn-buy" href="${paypalUrl(name, price)}"
@@ -230,9 +244,9 @@
         }
 
         const PLAYER_LAZY_CONFIG = {
-            preloadMarginPx: 280,
-            unloadDelayMs: 1500,
-            maxActivePlayers: window.matchMedia('(max-width: 640px)').matches ? 4 : 6,
+            preloadMarginPx: PERF_PROFILE.preloadMarginPx,
+            unloadDelayMs: PERF_PROFILE.unloadDelayMs,
+            maxActivePlayers: PERF_PROFILE.maxActivePlayers,
         };
 
         /**
@@ -261,6 +275,13 @@
                 iframe.src = 'about:blank';
                 iframe.remove();
                 activePlayers.delete(wrapper);
+
+                const trigger = wrapper.querySelector('.preview-trigger');
+                if (trigger) {
+                    trigger.hidden = false;
+                    trigger.disabled = false;
+                    trigger.textContent = 'Tap to load preview';
+                }
 
                 const index = lru.indexOf(wrapper);
                 if (index !== -1) {
@@ -295,16 +316,34 @@
                 pendingUnloads.set(wrapper, timeoutId);
             }
 
-            function loadPlayer(wrapper) {
+            function loadPlayer(wrapper, fromUserGesture = false) {
                 cancelUnload(wrapper);
+
+                if (PERF_PROFILE.tapToLoadPreviews && !fromUserGesture) {
+                    return;
+                }
 
                 if (activePlayers.has(wrapper)) {
                     touchWrapper(wrapper);
                     return;
                 }
 
+                if (PERF_PROFILE.tapToLoadPreviews) {
+                    activePlayers.forEach((_, activeWrapper) => {
+                        if (activeWrapper !== wrapper) {
+                            unloadPlayer(activeWrapper);
+                        }
+                    });
+                }
+
                 const src = wrapper.getAttribute('data-src');
                 if (!src) return;
+
+                const trigger = wrapper.querySelector('.preview-trigger');
+                if (trigger) {
+                    trigger.disabled = true;
+                    trigger.textContent = 'Loading preview...';
+                }
 
                 const iframe = document.createElement('iframe');
                 iframe.className = 'beat-player';
@@ -312,6 +351,20 @@
                 iframe.src = src;
                 iframe.setAttribute('allow', 'autoplay');
                 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+                iframe.setAttribute('title', 'Beat preview player');
+
+                iframe.addEventListener('load', () => {
+                    if (trigger) {
+                        trigger.hidden = true;
+                    }
+                }, { once: true });
+
+                iframe.addEventListener('error', () => {
+                    unloadPlayer(wrapper);
+                    if (trigger) {
+                        trigger.textContent = 'Tap to retry preview';
+                    }
+                }, { once: true });
 
                 wrapper.appendChild(iframe);
                 activePlayers.set(wrapper, iframe);
@@ -336,6 +389,16 @@
             });
 
             wrappers.forEach(w => observer.observe(w));
+
+            if (PERF_PROFILE.tapToLoadPreviews) {
+                wrappers.forEach(wrapper => {
+                    const trigger = wrapper.querySelector('.preview-trigger');
+                    if (!trigger) return;
+                    trigger.addEventListener('click', () => {
+                        loadPlayer(wrapper, true);
+                    });
+                });
+            }
 
             window.addEventListener('pagehide', () => {
                 observer.disconnect();
