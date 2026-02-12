@@ -236,17 +236,14 @@ body {
     white-space: nowrap;
 }
 
-/* ===== AUDIO PLAYER ===== */
+/* ===== AUDIO PLAYER (iframe embed) ===== */
 .beat-player {
     width: 100%;
+    height: 80px;
     margin-bottom: 18px;
     border-radius: 8px;
-    height: 36px;
-}
-
-.beat-player::-webkit-media-controls-panel {
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.03);
 }
 
 /* ===== BEAT ACTIONS ===== */

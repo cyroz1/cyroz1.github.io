@@ -108,9 +108,9 @@
             return `https://www.paypal.com/cgi-bin/webscr?${params}`;
         }
 
-        /** Google Drive streaming URL (for audio preview) */
-        function driveStreamUrl(fileId) {
-            return `https://docs.google.com/uc?export=open&id=${fileId}`;
+        /** Google Drive embed preview URL */
+        function drivePreviewUrl(fileId) {
+            return `https://drive.google.com/file/d/${fileId}/preview`;
         }
 
         // ============================================================
@@ -119,7 +119,7 @@
         function createBeatCard(file, index) {
             const name = beatNameFromFile(file.name);
             const price = CONFIG.DEFAULT_PRICE;
-            const streamSrc = driveStreamUrl(file.id);
+            const previewSrc = drivePreviewUrl(file.id);
 
             const card = document.createElement('div');
             card.className = 'beat-card';
@@ -131,11 +131,9 @@
                     <span class="beat-price">$${price}</span>
                 </div>
                 <span class="beat-tag">Beat Lease</span>
-                <audio class="beat-player" controls controlsList="nodownload" preload="none"
-                       oncontextmenu="return false">
-                    <source src="${streamSrc}" type="audio/mpeg">
-                    Your browser does not support the audio element.
-                </audio>
+                <iframe class="beat-player" src="${previewSrc}"
+                        allow="autoplay" sandbox="allow-scripts allow-same-origin"
+                        loading="lazy"></iframe>
                 <div class="beat-actions">
                     <a class="btn-buy" href="${paypalUrl(name, price)}"
                        target="_blank" rel="noopener noreferrer">
@@ -159,7 +157,7 @@
                     `q='${CONFIG.FOLDER_ID}'+in+parents+and+trashed=false` +
                     `&key=${CONFIG.API_KEY}` +
                     `&fields=files(id,name,mimeType)` +
-                    `&orderBy=name` +
+                    `&orderBy=modifiedTime+desc` +
                     `&pageSize=100`;
 
                 const res = await fetch(apiUrl);
