@@ -142,10 +142,8 @@
                     <span class="beat-price">$${price}</span>
                 </div>
                 <span class="beat-tag">Beat Lease</span>
-                <div class="beat-player-wrapper">
-                    <iframe class="beat-player lazy-iframe" data-src="${previewSrc}"
-                            allow="autoplay" sandbox="allow-scripts allow-same-origin"
-                            loading="lazy"></iframe>
+                <div class="beat-player-wrapper" data-src="${previewSrc}">
+                    <!-- Iframe dynamically injected/removed for memory optimization -->
                 </div>
                 <div class="beat-actions">
                     <a class="btn-buy" href="${paypalUrl(name, price)}"
@@ -229,33 +227,41 @@
             }
         }
 
-        /** Lazy load/unload iframes using IntersectionObserver */
+        /** Dynamic iframe creation/destruction using IntersectionObserver */
         function initLazyLoading() {
-            const iframes = document.querySelectorAll('.beat-player');
+            const wrappers = document.querySelectorAll('.beat-player-wrapper');
 
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
-                    const iframe = entry.target;
-                    const src = iframe.getAttribute('data-src');
+                    const wrapper = entry.target;
+                    const src = wrapper.getAttribute('data-src');
+                    let iframe = wrapper.querySelector('iframe');
 
                     if (entry.isIntersecting) {
-                        // Load iframe when it enters viewport
-                        if (iframe.src !== src) {
+                        // Create iframe if it doesn't exist
+                        if (!iframe) {
+                            iframe = document.createElement('iframe');
+                            iframe.className = 'beat-player';
                             iframe.src = src;
+                            iframe.setAttribute('allow', 'autoplay');
+                            iframe.setAttribute('sandbox', 'allow-scripts');
+                            // loading="lazy" is still good as an extra layer
+                            iframe.setAttribute('loading', 'lazy');
+                            wrapper.appendChild(iframe);
                         }
                     } else {
-                        // Unload iframe when it leaves viewport to save memory
-                        if (iframe.src !== 'about:blank' && iframe.src !== '') {
-                            iframe.src = 'about:blank';
+                        // Completely remove iframe to force memory reclamation
+                        if (iframe) {
+                            iframe.remove();
                         }
                     }
                 });
             }, {
-                rootMargin: '600px 0px', // Load well before they come into view for better UX
+                rootMargin: '1000px 0px', // Larger margin to hide recreation latency
                 threshold: 0.01
             });
 
-            iframes.forEach(iframe => observer.observe(iframe));
+            wrappers.forEach(w => observer.observe(w));
         }
 
         // ============================================================
@@ -269,7 +275,7 @@
             let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
             let tx = cx, ty = cy;
 
-            document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
+            document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
 
             (function animate() {
                 cx += (tx - cx) * 0.08;
