@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#050505">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#050505">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#050505">
+    <meta name="description" content="cyroz - Download settings files">
+    <meta name="keywords" content="cyroz, settings, files, config">
+    <meta name="author" content="cyroz">
+    <meta property="og:title" content="cyroz - Settings">
+    <meta property="og:description" content="Download settings files">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cyroz1.github.io/settings.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <title>Settings - cyroz</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="settings.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="bg-canvas">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="glow glow-3"></div>
+        <div class="glow-cursor" id="glowCursor"></div>
+    </div>
+
+    <main class="container">
+        <header class="hero">
+            <h1>Settings</h1>
+            <p>Files are loaded live from Google Drive</p>
+        </header>
+
+        <div class="drive-link-wrapper">
+            <a href="https://drive.google.com/drive/folders/1nOATMA-Eh0SJJhRETGKWPvLW1V-F0Idt?usp=sharing" target="_blank"
+                rel="noopener noreferrer" class="drive-link">
+                Open Folder in Google Drive
+            </a>
+        </div>
+
+        <div class="setup-grid" id="settingsGrid">
+            <div class="settings-loading" id="settingsLoading">
+                <div class="loading-spinner"></div>
+                <span>Loading settings...</span>
+            </div>
+        </div>
+
+        <div class="back-wrapper">
+            <a href="index.html" class="back-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Home
+            </a>
+        </div>
+    </main>
+
+    <script>
+        const CONFIG = {
+            FOLDER_ID: '1nOATMA-Eh0SJJhRETGKWPvLW1V-F0Idt',
+            API_KEY: 'AIzaSyCpy-rEO1nopWSSWFuvrWDpelidsV2gpl4',
+        };
+
+        const FILE_ICON = `
+            <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+            </svg>
+        `;
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function fileTypeLabel(file) {
+            const googleMimeMap = {
+                'application/vnd.google-apps.document': 'Google Doc',
+                'application/vnd.google-apps.spreadsheet': 'Google Sheet',
+                'application/vnd.google-apps.presentation': 'Google Slides',
+                'application/vnd.google-apps.drawing': 'Google Drawing',
+                'application/vnd.google-apps.form': 'Google Form',
+            };
+
+            if (googleMimeMap[file.mimeType]) {
+                return googleMimeMap[file.mimeType];
+            }
+
+            const extMatch = file.name.match(/\.([^.]+)$/);
+            return extMatch ? extMatch[1].toUpperCase() : 'File';
+        }
+
+        function driveViewUrl(fileId) {
+            return `https://drive.google.com/file/d/${fileId}/view`;
+        }
+
+        function driveDownloadUrl(fileId) {
+            return `https://drive.google.com/uc?export=download&id=${fileId}`;
+        }
+
+        function createSettingItem(file, index) {
+            const item = document.createElement('div');
+            item.className = 'setup-item';
+            item.style.setProperty('--delay', index);
+
+            const safeName = escapeHtml(file.name);
+            const safeType = escapeHtml(fileTypeLabel(file));
+            const viewUrl = driveViewUrl(file.id);
+            const downloadUrl = driveDownloadUrl(file.id);
+
+            item.innerHTML = `
+                ${FILE_ICON}
+                <div class="item-body">
+                    <div class="item-content">
+                        <span class="item-label">${safeType}</span>
+                        <a href="${viewUrl}" target="_blank" rel="noopener noreferrer">${safeName}</a>
+                    </div>
+                    <div class="file-actions">
+                        <a href="${viewUrl}" target="_blank" rel="noopener noreferrer" class="file-btn">Open</a>
+                        <a href="${downloadUrl}" target="_blank" rel="noopener noreferrer" class="file-btn file-btn-primary">Download</a>
+                    </div>
+                </div>
+            `;
+
+            return item;
+        }
+
+        async function loadSettings() {
+            const grid = document.getElementById('settingsGrid');
+            const loading = document.getElementById('settingsLoading');
+
+            try {
+                const apiUrl = `https://www.googleapis.com/drive/v3/files?` +
+                    `q='${CONFIG.FOLDER_ID}'+in+parents+and+trashed=false+and+mimeType!='application/vnd.google-apps.folder'` +
+                    `&key=${CONFIG.API_KEY}` +
+                    `&fields=files(id,name,mimeType,modifiedTime)` +
+                    `&orderBy=modifiedTime+desc` +
+                    `&pageSize=100`;
+
+                const res = await fetch(apiUrl);
+
+                if (!res.ok) {
+                    throw new Error(`API returned ${res.status}`);
+                }
+
+                const data = await res.json();
+                const files = data.files || [];
+
+                loading.remove();
+
+                if (files.length === 0) {
+                    grid.innerHTML = `
+                        <div class="settings-empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <p>No settings files found right now.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                files.forEach((file, index) => {
+                    fragment.appendChild(createSettingItem(file, index));
+                });
+                grid.appendChild(fragment);
+            } catch (err) {
+                console.error('Failed to load settings:', err);
+                loading.innerHTML = `
+                    <div class="settings-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <p>Couldn't load settings. Please try again later.</p>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSettings);
+
+        const cursor = document.getElementById('glowCursor');
+        if (window.matchMedia('(pointer: fine)').matches && cursor) {
+            let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+            let tx = cx, ty = cy;
+
+            document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
+
+            (function animate() {
+                cx += (tx - cx) * 0.08;
+                cy += (ty - cy) * 0.08;
+                cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
+                requestAnimationFrame(animate);
+            })();
+        } else if (cursor) {
+            cursor.style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>
