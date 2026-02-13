@@ -8,11 +8,11 @@
     <meta name="theme-color" content="#050505">
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#050505">
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#050505">
-    <meta name="description" content="cyroz - Download settings files">
+    <meta name="description" content="cyroz - Settings previews">
     <meta name="keywords" content="cyroz, settings, files, config">
     <meta name="author" content="cyroz">
     <meta property="og:title" content="cyroz - Settings">
-    <meta property="og:description" content="Download settings files">
+    <meta property="og:description" content="Preview settings files">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cyroz1.github.io/settings.html">
     <meta name="twitter:card" content="summary_large_image">
@@ -36,17 +36,10 @@
     <main class="container">
         <header class="hero">
             <h1>Settings</h1>
-            <p>Files are loaded live from Google Drive</p>
+            <p>Preview files loaded live from Google Drive</p>
         </header>
 
-        <div class="drive-link-wrapper">
-            <a href="https://drive.google.com/drive/folders/1nOATMA-Eh0SJJhRETGKWPvLW1V-F0Idt?usp=sharing" target="_blank"
-                rel="noopener noreferrer" class="drive-link">
-                Open Folder in Google Drive
-            </a>
-        </div>
-
-        <div class="setup-grid" id="settingsGrid">
+        <div class="settings-grid" id="settingsGrid">
             <div class="settings-loading" id="settingsLoading">
                 <div class="loading-spinner"></div>
                 <span>Loading settings...</span>
@@ -71,14 +64,6 @@
             API_KEY: 'AIzaSyCpy-rEO1nopWSSWFuvrWDpelidsV2gpl4',
         };
 
-        const FILE_ICON = `
-            <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-            </svg>
-        `;
-
         function escapeHtml(value) {
             return String(value)
                 .replace(/&/g, '&amp;')
@@ -88,56 +73,33 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function fileTypeLabel(file) {
-            const googleMimeMap = {
-                'application/vnd.google-apps.document': 'Google Doc',
-                'application/vnd.google-apps.spreadsheet': 'Google Sheet',
-                'application/vnd.google-apps.presentation': 'Google Slides',
-                'application/vnd.google-apps.drawing': 'Google Drawing',
-                'application/vnd.google-apps.form': 'Google Form',
-            };
-
-            if (googleMimeMap[file.mimeType]) {
-                return googleMimeMap[file.mimeType];
-            }
-
-            const extMatch = file.name.match(/\.([^.]+)$/);
-            return extMatch ? extMatch[1].toUpperCase() : 'File';
+        function drivePreviewUrl(fileId) {
+            return `https://drive.google.com/file/d/${fileId}/preview`;
         }
 
-        function driveViewUrl(fileId) {
-            return `https://drive.google.com/file/d/${fileId}/view`;
-        }
-
-        function driveDownloadUrl(fileId) {
-            return `https://drive.google.com/uc?export=download&id=${fileId}`;
-        }
-
-        function createSettingItem(file, index) {
-            const item = document.createElement('div');
-            item.className = 'setup-item';
-            item.style.setProperty('--delay', index);
+        function createSettingCard(file, index) {
+            const card = document.createElement('div');
+            card.className = 'settings-card';
+            card.style.setProperty('--delay', index);
 
             const safeName = escapeHtml(file.name);
-            const safeType = escapeHtml(fileTypeLabel(file));
-            const viewUrl = driveViewUrl(file.id);
-            const downloadUrl = driveDownloadUrl(file.id);
+            const previewSrc = drivePreviewUrl(file.id);
 
-            item.innerHTML = `
-                ${FILE_ICON}
-                <div class="item-body">
-                    <div class="item-content">
-                        <span class="item-label">${safeType}</span>
-                        <a href="${viewUrl}" target="_blank" rel="noopener noreferrer">${safeName}</a>
-                    </div>
-                    <div class="file-actions">
-                        <a href="${viewUrl}" target="_blank" rel="noopener noreferrer" class="file-btn">Open</a>
-                        <a href="${downloadUrl}" target="_blank" rel="noopener noreferrer" class="file-btn file-btn-primary">Download</a>
-                    </div>
+            card.innerHTML = `
+                <h2 class="settings-title">${safeName}</h2>
+                <div class="settings-preview-wrapper">
+                    <iframe
+                        class="settings-preview"
+                        src="${previewSrc}"
+                        loading="lazy"
+                        title="${safeName} preview"
+                        sandbox="allow-scripts allow-same-origin"
+                        allow="autoplay">
+                    </iframe>
                 </div>
             `;
 
-            return item;
+            return card;
         }
 
         async function loadSettings() {
@@ -179,7 +141,7 @@
 
                 const fragment = document.createDocumentFragment();
                 files.forEach((file, index) => {
-                    fragment.appendChild(createSettingItem(file, index));
+                    fragment.appendChild(createSettingCard(file, index));
                 });
                 grid.appendChild(fragment);
             } catch (err) {
