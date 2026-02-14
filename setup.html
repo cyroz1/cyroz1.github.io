@@ -17,11 +17,13 @@
     <meta property="og:url" content="https://cyroz1.github.io/setup.html">
     <meta name="twitter:card" content="summary_large_image">
     <title>Setup - cyroz</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+    <link rel="shortcut icon" href="favicon.ico">
     <link rel="stylesheet" href="setup.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap"
         rel="stylesheet">
 </head>
 
@@ -37,6 +39,17 @@
         <header class="hero">
             <h1>Setup</h1>
         </header>
+
+        <div class="back-wrapper" style="margin-bottom: 32px;">
+            <a href="index.html" class="back-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Back to Home
+            </a>
+        </div>
 
         <div class="setup-grid">
             <div class="setup-item" style="--delay: 0">
@@ -241,24 +254,7 @@
         </div>
     </main>
 
-    <script>
-        const cursor = document.getElementById('glowCursor');
-        if (window.matchMedia('(pointer: fine)').matches && cursor) {
-            let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-            let tx = cx, ty = cy;
-
-            document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; });
-
-            (function animate() {
-                cx += (tx - cx) * 0.08;
-                cy += (ty - cy) * 0.08;
-                cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
-                requestAnimationFrame(animate);
-            })();
-        } else if (cursor) {
-            cursor.style.display = 'none';
-        }
-    </script>
+    <script src="cursor-glow.js"></script>
 </body>
 
 </html>

@@ -17,11 +17,13 @@
     <meta property="og:url" content="https://cyroz1.github.io/beats.html">
     <meta name="twitter:card" content="summary_large_image">
     <title>Beats - cyroz</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+    <link rel="shortcut icon" href="favicon.ico">
     <link rel="stylesheet" href="beats.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap"
         rel="stylesheet">
 </head>
 
@@ -420,24 +422,8 @@
         // ============================================================
         document.addEventListener('DOMContentLoaded', loadBeats);
 
-        // Cursor glow effect - only run on devices with a mouse
-        const cursor = document.getElementById('glowCursor');
-        if (window.matchMedia('(pointer: fine)').matches && cursor) {
-            let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-            let tx = cx, ty = cy;
-
-            document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
-
-            (function animate() {
-                cx += (tx - cx) * 0.08;
-                cy += (ty - cy) * 0.08;
-                cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
-                requestAnimationFrame(animate);
-            })();
-        } else if (cursor) {
-            cursor.style.display = 'none';
-        }
     </script>
+    <script src="cursor-glow.js"></script>
 </body>
 
 </html>
