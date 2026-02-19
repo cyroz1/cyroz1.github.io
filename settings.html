@@ -15,12 +15,19 @@
     <meta property="og:description" content="Preview settings files">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cyroz1.github.io/settings.html">
+    <meta property="og:image" content="https://cyroz1.github.io/files/og-preview.png">
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://cyroz1.github.io/files/og-preview.png">
+    <link rel="canonical" href="https://cyroz1.github.io/settings.html">
     <title>Settings - cyroz</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="base.css">
     <link rel="stylesheet" href="settings.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        as="style">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet">
 </head>
@@ -49,7 +56,7 @@
         <div class="back-wrapper">
             <a href="index.html" class="back-button">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <line x1="19" y1="12" x2="5" y2="12" />
                     <polyline points="12 19 5 12 12 5" />
                 </svg>
@@ -81,10 +88,8 @@
             const card = document.createElement('div');
             card.className = 'settings-card';
             card.style.setProperty('--delay', index);
-
             const safeName = escapeHtml(file.name);
             const previewSrc = drivePreviewUrl(file.id);
-
             card.innerHTML = `
                 <h2 class="settings-title">${safeName}</h2>
                 <div class="settings-preview-wrapper">
@@ -98,87 +103,39 @@
                     </iframe>
                 </div>
             `;
-
             return card;
         }
 
         async function loadSettings() {
             const grid = document.getElementById('settingsGrid');
             const loading = document.getElementById('settingsLoading');
-
             try {
                 const apiUrl = `https://www.googleapis.com/drive/v3/files?` +
                     `q='${CONFIG.FOLDER_ID}'+in+parents+and+trashed=false+and+mimeType!='application/vnd.google-apps.folder'` +
                     `&key=${CONFIG.API_KEY}` +
                     `&fields=files(id,name,mimeType,modifiedTime)` +
-                    `&orderBy=modifiedTime+desc` +
-                    `&pageSize=100`;
-
+                    `&orderBy=modifiedTime+desc&pageSize=100`;
                 const res = await fetch(apiUrl);
-
-                if (!res.ok) {
-                    throw new Error(`API returned ${res.status}`);
-                }
-
+                if (!res.ok) throw new Error(`API returned ${res.status}`);
                 const data = await res.json();
                 const files = data.files || [];
-
                 loading.remove();
-
                 if (files.length === 0) {
-                    grid.innerHTML = `
-                        <div class="settings-empty">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                            </svg>
-                            <p>No settings files found right now.</p>
-                        </div>
-                    `;
+                    grid.innerHTML = `<div class="settings-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>No settings files found right now.</p></div>`;
                     return;
                 }
-
                 const fragment = document.createDocumentFragment();
-                files.forEach((file, index) => {
-                    fragment.appendChild(createSettingCard(file, index));
-                });
+                files.forEach((file, index) => fragment.appendChild(createSettingCard(file, index)));
                 grid.appendChild(fragment);
             } catch (err) {
                 console.error('Failed to load settings:', err);
-                loading.innerHTML = `
-                    <div class="settings-empty">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        <p>Couldn't load settings. Please try again later.</p>
-                    </div>
-                `;
+                loading.innerHTML = `<div class="settings-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>Couldn't load settings. Please try again later.</p></div>`;
             }
         }
 
         document.addEventListener('DOMContentLoaded', loadSettings);
-
-        const cursor = document.getElementById('glowCursor');
-        if (window.matchMedia('(pointer: fine)').matches && cursor) {
-            let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-            let tx = cx, ty = cy;
-
-            document.addEventListener('mousemove', e => { tx = e.clientX; ty = e.clientY; }, { passive: true });
-
-            (function animate() {
-                cx += (tx - cx) * 0.08;
-                cy += (ty - cy) * 0.08;
-                cursor.style.transform = `translate(${cx - 200}px, ${cy - 200}px)`;
-                requestAnimationFrame(animate);
-            })();
-        } else if (cursor) {
-            cursor.style.display = 'none';
-        }
     </script>
+    <script src="cursor.js" defer></script>
 </body>
 
 </html>
