@@ -152,7 +152,14 @@
     flex-shrink: 0;
 }
 
-/* ===== BEAT TAG ===== */
+/* ===== BEAT META (tag + date row) ===== */
+.beat-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
 .beat-tag {
     display: inline-block;
     font-size: 0.7rem;
@@ -162,9 +169,15 @@
     border: 1px solid rgba(255, 255, 255, 0.06);
     padding: 3px 10px;
     border-radius: 6px;
-    margin-bottom: 14px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+}
+
+.beat-date {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    opacity: 0.6;
 }
 
 /* ===== LOADING STATE ===== */

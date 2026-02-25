@@ -38,10 +38,16 @@ function drivePreviewUrl(fileId) {
     return `https://drive.google.com/file/d/${fileId}/preview`;
 }
 
+function formatModifiedDate(isoString) {
+    if (!isoString) return '';
+    return new Date(isoString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function createBeatCard(file, index) {
     const name = beatNameFromFile(file.name);
     const price = CONFIG.DEFAULT_PRICE;
     const previewSrc = drivePreviewUrl(file.id);
+    const dateStr = formatModifiedDate(file.modifiedTime);
 
     const card = document.createElement('div');
     card.className = 'beat-card';
@@ -52,7 +58,10 @@ function createBeatCard(file, index) {
             <span class="beat-name">${name}</span>
             <span class="beat-price">$${price}</span>
         </div>
-        <span class="beat-tag">Beat Lease</span>
+        <div class="beat-meta">
+            <span class="beat-tag">Beat Lease</span>
+            ${dateStr ? `<span class="beat-date">${dateStr}</span>` : ''}
+        </div>
         <div class="beat-player-wrapper" data-src="${previewSrc}">
             ${PERF_PROFILE.clickToLoadPreviews ? `<button class="preview-trigger" type="button">${PERF_PROFILE.isCoarsePointer ? 'Tap' : 'Click'} to load preview</button>` : ''}
         </div>
@@ -71,7 +80,7 @@ async function loadBeats() {
     try {
         const apiUrl = `https://www.googleapis.com/drive/v3/files?` +
             `q='${CONFIG.FOLDER_ID}'+in+parents+and+trashed=false` +
-            `&key=${CONFIG.API_KEY}&fields=files(id,name,mimeType)` +
+            `&key=${CONFIG.API_KEY}&fields=files(id,name,mimeType,modifiedTime)` +
             `&orderBy=modifiedTime+desc&pageSize=100`;
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error(`API returned ${res.status}`);
