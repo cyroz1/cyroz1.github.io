@@ -68,45 +68,112 @@
 .beat-player-wrapper {
     position: relative;
     width: 100%;
-    height: 80px;
+    min-height: 92px;
     margin-bottom: 18px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 255, 255, 0.025));
+    border: 1px solid rgba(255, 215, 0, 0.1);
     overflow: hidden;
-    contain: strict;
+    contain: layout paint;
 }
 
-.beat-player {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
+.custom-player {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
 }
 
-.preview-trigger {
-    width: 100%;
-    height: 100%;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text-muted);
-    font: inherit;
-    font-size: 0.82rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+.player-button {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 215, 0, 0.24);
+    border-radius: 50%;
+    background: rgba(255, 215, 0, 0.12);
+    color: var(--gold-light);
     cursor: pointer;
-    transition: border-color var(--transition), background var(--transition), color var(--transition);
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
 }
 
-.preview-trigger:hover {
+.player-button:hover {
+    transform: scale(1.04);
     border-color: rgba(255, 215, 0, 0.35);
-    background: rgba(255, 215, 0, 0.08);
-    color: var(--text);
+    background: rgba(255, 215, 0, 0.18);
 }
 
-.preview-trigger:disabled {
-    cursor: default;
-    opacity: 0.75;
+.play-icon {
+    width: 0;
+    height: 0;
+    margin-left: 3px;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 12px solid currentColor;
+}
+
+.is-playing .play-icon {
+    width: 13px;
+    height: 15px;
+    margin-left: 0;
+    border: 0;
+    background:
+        linear-gradient(currentColor, currentColor) left center / 4px 100% no-repeat,
+        linear-gradient(currentColor, currentColor) right center / 4px 100% no-repeat;
+}
+
+.player-main {
+    min-width: 0;
+}
+
+.visualizer {
+    display: block;
+    width: 100%;
+    height: 52px;
+    opacity: 0.92;
+}
+
+.player-progress {
+    position: relative;
+    width: 100%;
+    height: 6px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.player-progress:focus-visible {
+    outline: 2px solid rgba(240, 192, 64, 0.85);
+    outline-offset: 3px;
+}
+
+.progress-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    box-shadow: 0 0 14px rgba(240, 192, 64, 0.35);
+}
+
+.player-time {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.has-error {
+    border-color: rgba(255, 90, 90, 0.32);
+}
+
+.has-error .player-time {
+    color: #ff8f8f;
 }
 
 /* ===== BEAT ACTIONS ===== */
