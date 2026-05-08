@@ -219,6 +219,39 @@
     flex-shrink: 0;
 }
 
+
+.btn-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 215, 0, 0.28);
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--gold-light);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-copy:hover {
+    border-color: rgba(255, 215, 0, 0.45);
+    background: rgba(255, 215, 0, 0.18);
+}
+
+.btn-copy.is-copied {
+    color: #0a0a0a;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+}
+
+.beat-card.is-highlighted {
+    border-color: rgba(255, 215, 0, 0.68);
+    box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5), 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
 /* ===== BEAT META (tag + date row) ===== */
 .beat-meta {
     display: flex;

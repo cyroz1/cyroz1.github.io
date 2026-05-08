@@ -66,15 +66,53 @@ function formatModifiedDate(isoString) {
     });
 }
 
+function beatAnchorId(file) {
+    return `beat-${String(file.id || '').replace(/[^a-zA-Z0-9_-]/g, '')}`;
+}
+
+function copyBeatLink(anchorId, button) {
+    const url = `${window.location.origin}${window.location.pathname}#${anchorId}`;
+    const setCopiedState = () => {
+        const original = button.dataset.originalLabel || 'Copy Link';
+        button.textContent = 'Copied!';
+        button.classList.add('is-copied');
+        window.setTimeout(() => {
+            button.textContent = original;
+            button.classList.remove('is-copied');
+        }, 1400);
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(setCopiedState).catch(() => {
+            window.prompt('Copy this beat link:', url);
+        });
+        return;
+    }
+
+    window.prompt('Copy this beat link:', url);
+}
+
+function scrollToBeatFromHash() {
+    const hash = decodeURIComponent(window.location.hash || '').replace(/^#/, '');
+    if (!hash) return;
+    const target = document.getElementById(hash);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('is-highlighted');
+    window.setTimeout(() => target.classList.remove('is-highlighted'), 1800);
+}
+
 function createBeatCard(file, index) {
     const name = beatNameFromFile(file.name);
     const safeName = escapeHtml(name);
     const price = CONFIG.DEFAULT_PRICE;
     const previewSrc = driveMediaUrl(file.id);
     const dateStr = formatModifiedDate(file.modifiedTime);
+    const anchorId = beatAnchorId(file);
 
     const card = document.createElement('div');
     card.className = 'beat-card';
+    card.id = anchorId;
     card.style.setProperty('--delay', index);
 
     card.innerHTML = `
@@ -100,6 +138,7 @@ function createBeatCard(file, index) {
             <span class="player-time">0:00</span>
         </div>
         <div class="beat-actions">
+            <button class="btn-copy" type="button" data-anchor-id="${anchorId}">Copy Link</button>
             <a class="btn-buy" href="${paypalUrl(name, price)}" target="_blank" rel="noopener noreferrer">
                 ${PAYPAL_ICON} Buy - $${price}
             </a>
@@ -131,10 +170,25 @@ async function loadBeats() {
         audioFiles.forEach((file, i) => fragment.appendChild(createBeatCard(file, i)));
         grid.appendChild(fragment);
         initPlayers();
+        bindCopyButtons();
+        scrollToBeatFromHash();
     } catch (err) {
         console.error('Failed to load beats:', err);
         loading.innerHTML = `<div class="beats-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>Couldn't load beats. Please try again later.</p></div>`;
     }
+}
+
+
+function bindCopyButtons() {
+    const copyButtons = document.querySelectorAll('.btn-copy');
+    copyButtons.forEach(button => {
+        button.dataset.originalLabel = button.textContent.trim();
+        button.addEventListener('click', () => {
+            const anchorId = button.dataset.anchorId;
+            if (!anchorId) return;
+            copyBeatLink(anchorId, button);
+        });
+    });
 }
 
 function initPlayers() {
