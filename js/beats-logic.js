@@ -6,27 +6,8 @@ const CONFIG = {
     CURRENCY: 'USD',
 };
 
-const PERF_PROFILE = (() => {
-    const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-    const isNarrowScreen = window.matchMedia('(max-width: 768px)').matches;
-    const isMobile = isCoarsePointer || isNarrowScreen;
-    return {
-        isMobile,
-        isCoarsePointer,
-        preloadMarginPx: 0,
-        unloadDelayMs: isMobile ? 300 : 900,
-        maxActivePlayers: 1,
-    };
-})();
-
 const PAYPAL_ICON = `<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/></svg>`;
 const LINK_ICON = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.43"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.33-1.33"/></svg>`;
-
-const PLAYER_LAZY_CONFIG = {
-    preloadMarginPx: PERF_PROFILE.preloadMarginPx,
-    unloadDelayMs: PERF_PROFILE.unloadDelayMs,
-    maxActivePlayers: PERF_PROFILE.maxActivePlayers,
-};
 
 function beatNameFromFile(filename) {
     return filename.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -71,6 +52,24 @@ function beatAnchorId(file) {
     return `beat-${String(file.id || '').replace(/[^a-zA-Z0-9_-]/g, '')}`;
 }
 
+function showBeatToast(message) {
+    let toast = document.querySelector('.beat-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'beat-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+
+    toast.textContent = message;
+    toast.classList.add('is-visible');
+    window.clearTimeout(showBeatToast.timeoutId);
+    showBeatToast.timeoutId = window.setTimeout(() => {
+        toast.classList.remove('is-visible');
+    }, 1700);
+}
+
 function copyBeatLink(anchorId, button) {
     const url = `${window.location.origin}${window.location.pathname}#${anchorId}`;
     const setCopiedState = () => {
@@ -78,6 +77,7 @@ function copyBeatLink(anchorId, button) {
         button.setAttribute('aria-label', 'Copied beat link');
         button.title = 'Copied';
         button.classList.add('is-copied');
+        showBeatToast('Beat link copied');
         window.setTimeout(() => {
             button.setAttribute('aria-label', original);
             button.title = original;
@@ -97,10 +97,12 @@ function copyBeatLink(anchorId, button) {
 
 function scrollToBeatFromHash() {
     const hash = decodeURIComponent(window.location.hash || '').replace(/^#/, '');
+    document.querySelectorAll('.beat-card.is-shared').forEach(card => card.classList.remove('is-shared'));
     if (!hash) return;
     const target = document.getElementById(hash);
     if (!target) return;
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('is-shared');
     target.classList.add('is-highlighted');
     window.setTimeout(() => target.classList.remove('is-highlighted'), 1800);
 }
@@ -122,6 +124,7 @@ function createBeatCard(file, index) {
         <button class="btn-copy" type="button" data-anchor-id="${anchorId}" aria-label="Copy beat link" title="Copy beat link">
             ${LINK_ICON}
         </button>
+        <span class="shared-beat-label">Shared beat</span>
         <div class="beat-header">
             <span class="beat-name">${safeName}</span>
             <span class="beat-price">$${price}</span>
@@ -145,7 +148,7 @@ function createBeatCard(file, index) {
         </div>
         <div class="beat-actions">
             <a class="btn-buy" href="${paypalUrl(name, price)}" target="_blank" rel="noopener noreferrer">
-                ${PAYPAL_ICON} Buy - $${price}
+                ${PAYPAL_ICON} Lease - $${price}
             </a>
         </div>
     `;
@@ -199,9 +202,6 @@ function bindCopyButtons() {
 function initPlayers() {
     const wrappers = document.querySelectorAll('.beat-player-wrapper');
     const activePlayers = new Map();
-    const pendingUnloads = new Map();
-    const visibleWrappers = new Set();
-    const lru = [];
     let currentWrapper = null;
     let audioContext = null;
     let analyser = null;
@@ -209,12 +209,6 @@ function initPlayers() {
     let animationFrame = null;
     let visualizedAudio = null;
     const frequencyData = new Uint8Array(64);
-
-    function touchWrapper(wrapper) {
-        const index = lru.indexOf(wrapper);
-        if (index !== -1) lru.splice(index, 1);
-        lru.push(wrapper);
-    }
 
     function formatTime(seconds) {
         if (!Number.isFinite(seconds)) return '0:00';
@@ -314,7 +308,9 @@ function initPlayers() {
 
     function setPlayingState(wrapper, isPlaying) {
         const button = wrapper.querySelector('.player-button');
+        const card = wrapper.closest('.beat-card');
         wrapper.classList.toggle('is-playing', isPlaying);
+        if (card) card.classList.toggle('is-playing', isPlaying);
         button.setAttribute('aria-label', `${isPlaying ? 'Pause' : 'Play'} ${wrapper.dataset.title}`);
     }
 
@@ -328,41 +324,10 @@ function initPlayers() {
         activePlayers.delete(wrapper);
         setPlayingState(wrapper, false);
         drawIdleVisualizer(wrapper.querySelector('.visualizer'));
-
-        const index = lru.indexOf(wrapper);
-        if (index !== -1) lru.splice(index, 1);
-    }
-
-    function enforcePlayerLimit(currentPlayerWrapper) {
-        while (activePlayers.size > PLAYER_LAZY_CONFIG.maxActivePlayers) {
-            const candidate =
-                lru.find(w => w !== currentPlayerWrapper && !visibleWrappers.has(w)) ||
-                lru.find(w => w !== currentPlayerWrapper);
-            if (!candidate) break;
-            unloadPlayer(candidate);
-        }
-    }
-
-    function cancelUnload(wrapper) {
-        const timeoutId = pendingUnloads.get(wrapper);
-        if (!timeoutId) return;
-        clearTimeout(timeoutId);
-        pendingUnloads.delete(wrapper);
-    }
-
-    function scheduleUnload(wrapper) {
-        if (pendingUnloads.has(wrapper)) return;
-        const timeoutId = setTimeout(() => {
-            pendingUnloads.delete(wrapper);
-            if (!visibleWrappers.has(wrapper)) unloadPlayer(wrapper);
-        }, PLAYER_LAZY_CONFIG.unloadDelayMs);
-        pendingUnloads.set(wrapper, timeoutId);
     }
 
     function loadPlayer(wrapper) {
-        cancelUnload(wrapper);
         if (activePlayers.has(wrapper)) {
-            touchWrapper(wrapper);
             return activePlayers.get(wrapper);
         }
 
@@ -399,8 +364,6 @@ function initPlayers() {
         }, { once: true });
 
         activePlayers.set(wrapper, audio);
-        touchWrapper(wrapper);
-        enforcePlayerLimit(wrapper);
         return audio;
     }
 
@@ -445,20 +408,7 @@ function initPlayers() {
         syncPlayerUi(wrapper, audio);
     }
 
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const wrapper = entry.target;
-            if (entry.isIntersecting) {
-                visibleWrappers.add(wrapper);
-            } else {
-                visibleWrappers.delete(wrapper);
-                scheduleUnload(wrapper);
-            }
-        });
-    }, { rootMargin: `${PLAYER_LAZY_CONFIG.preloadMarginPx}px 0px`, threshold: 0.1 });
-
     wrappers.forEach(wrapper => {
-        observer.observe(wrapper);
         drawIdleVisualizer(wrapper.querySelector('.visualizer'));
 
         const button = wrapper.querySelector('.player-button');
@@ -483,12 +433,10 @@ function initPlayers() {
     });
 
     window.addEventListener('pagehide', () => {
-        observer.disconnect();
-        pendingUnloads.forEach(id => clearTimeout(id));
-        pendingUnloads.clear();
         stopVisualizer();
         activePlayers.forEach((_, wrapper) => unloadPlayer(wrapper));
     }, { once: true });
 }
 
 document.addEventListener('DOMContentLoaded', loadBeats);
+window.addEventListener('hashchange', scrollToBeatFromHash);

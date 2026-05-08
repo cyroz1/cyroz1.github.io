@@ -39,6 +39,22 @@
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 30px var(--gold-glow);
 }
 
+.beat-card.is-playing {
+    border-color: rgba(255, 215, 0, 0.5);
+    background: rgba(255, 215, 0, 0.075);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 34px rgba(212, 160, 18, 0.22);
+}
+
+.beat-card.is-playing .beat-player-wrapper {
+    border-color: rgba(255, 215, 0, 0.28);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.13), rgba(255, 255, 255, 0.035));
+}
+
+.beat-card.is-playing .player-button {
+    border-color: rgba(255, 215, 0, 0.48);
+    background: rgba(255, 215, 0, 0.2);
+}
+
 /* ===== BEAT HEADER ===== */
 .beat-header {
     display: flex;
@@ -267,9 +283,52 @@
     pointer-events: none;
 }
 
+.shared-beat-label {
+    display: none;
+    align-self: flex-start;
+    margin: -4px 0 12px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--gold-light);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.beat-card.is-shared .shared-beat-label {
+    display: inline-flex;
+}
+
 .beat-card.is-highlighted {
     border-color: rgba(255, 215, 0, 0.68);
     box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5), 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.beat-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    z-index: 20;
+    transform: translate(-50%, 12px);
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 215, 0, 0.22);
+    border-radius: 8px;
+    background: rgba(12, 12, 12, 0.92);
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 700;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition), transform var(--transition);
+}
+
+.beat-toast.is-visible {
+    transform: translate(-50%, 0);
+    opacity: 1;
 }
 
 /* ===== BEAT META (tag + date row) ===== */
