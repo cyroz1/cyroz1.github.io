@@ -15,6 +15,7 @@
 
 /* ===== BEAT CARD ===== */
 .beat-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     padding: 24px;
@@ -43,6 +44,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 14px;
+    padding-right: 34px;
     margin-bottom: 16px;
 }
 
@@ -221,30 +224,47 @@
 
 
 .btn-copy {
+    position: absolute;
+    top: 14px;
+    right: 14px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 215, 0, 0.28);
-    background: rgba(255, 215, 0, 0.1);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 215, 0, 0.16);
+    background: rgba(10, 10, 10, 0.26);
     color: var(--gold-light);
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
     cursor: pointer;
-    transition: all var(--transition);
+    opacity: 0.72;
+    transition: opacity var(--transition), transform var(--transition), border-color var(--transition), background var(--transition), color var(--transition);
 }
 
 .btn-copy:hover {
-    border-color: rgba(255, 215, 0, 0.45);
-    background: rgba(255, 215, 0, 0.18);
+    opacity: 1;
+    transform: translateY(-1px);
+    border-color: rgba(255, 215, 0, 0.36);
+    background: rgba(255, 215, 0, 0.12);
+}
+
+.btn-copy:focus-visible {
+    outline: 2px solid rgba(240, 192, 64, 0.85);
+    outline-offset: 3px;
 }
 
 .btn-copy.is-copied {
     color: #0a0a0a;
     background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-color: transparent;
+    opacity: 1;
+}
+
+.copy-icon {
+    width: 15px;
+    height: 15px;
+    pointer-events: none;
 }
 
 .beat-card.is-highlighted {
@@ -367,6 +387,7 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
+        padding-right: 34px;
     }
 
     .beat-actions {

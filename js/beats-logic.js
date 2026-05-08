@@ -20,6 +20,7 @@ const PERF_PROFILE = (() => {
 })();
 
 const PAYPAL_ICON = `<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/></svg>`;
+const LINK_ICON = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.43"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.33-1.33"/></svg>`;
 
 const PLAYER_LAZY_CONFIG = {
     preloadMarginPx: PERF_PROFILE.preloadMarginPx,
@@ -73,11 +74,13 @@ function beatAnchorId(file) {
 function copyBeatLink(anchorId, button) {
     const url = `${window.location.origin}${window.location.pathname}#${anchorId}`;
     const setCopiedState = () => {
-        const original = button.dataset.originalLabel || 'Copy Link';
-        button.textContent = 'Copied!';
+        const original = button.dataset.originalLabel || 'Copy beat link';
+        button.setAttribute('aria-label', 'Copied beat link');
+        button.title = 'Copied';
         button.classList.add('is-copied');
         window.setTimeout(() => {
-            button.textContent = original;
+            button.setAttribute('aria-label', original);
+            button.title = original;
             button.classList.remove('is-copied');
         }, 1400);
     };
@@ -116,6 +119,9 @@ function createBeatCard(file, index) {
     card.style.setProperty('--delay', index);
 
     card.innerHTML = `
+        <button class="btn-copy" type="button" data-anchor-id="${anchorId}" aria-label="Copy beat link" title="Copy beat link">
+            ${LINK_ICON}
+        </button>
         <div class="beat-header">
             <span class="beat-name">${safeName}</span>
             <span class="beat-price">$${price}</span>
@@ -138,7 +144,6 @@ function createBeatCard(file, index) {
             <span class="player-time">0:00</span>
         </div>
         <div class="beat-actions">
-            <button class="btn-copy" type="button" data-anchor-id="${anchorId}">Copy Link</button>
             <a class="btn-buy" href="${paypalUrl(name, price)}" target="_blank" rel="noopener noreferrer">
                 ${PAYPAL_ICON} Buy - $${price}
             </a>
@@ -182,7 +187,7 @@ async function loadBeats() {
 function bindCopyButtons() {
     const copyButtons = document.querySelectorAll('.btn-copy');
     copyButtons.forEach(button => {
-        button.dataset.originalLabel = button.textContent.trim();
+        button.dataset.originalLabel = button.getAttribute('aria-label') || 'Copy beat link';
         button.addEventListener('click', () => {
             const anchorId = button.dataset.anchorId;
             if (!anchorId) return;
