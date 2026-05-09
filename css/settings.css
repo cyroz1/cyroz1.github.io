@@ -35,6 +35,10 @@
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 24px var(--gold-glow);
 }
 
+.settings-link-card {
+  text-decoration: none;
+}
+
 .settings-title {
   font-size: 1rem;
   font-weight: 700;
@@ -43,6 +47,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.settings-description {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .settings-preview-wrapper {
