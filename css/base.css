@@ -193,6 +193,17 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px var(--gold-glow);
 }
 
+/* ===== FOOTER ===== */
+.site-footer {
+  margin-top: 48px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  opacity: 0.72;
+  animation: fadeUp 0.5s ease-out 0.7s both;
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar {
   width: 6px;
