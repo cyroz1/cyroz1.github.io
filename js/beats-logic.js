@@ -243,6 +243,28 @@ function initPlayers() {
         animationFrame = null;
     }
 
+    function disconnectVisualizerNodes() {
+        if (sourceNode) {
+            try {
+                sourceNode.disconnect();
+            } catch (err) {
+                // Already disconnected.
+            }
+        }
+
+        if (analyser) {
+            try {
+                analyser.disconnect();
+            } catch (err) {
+                // Already disconnected.
+            }
+        }
+
+        sourceNode = null;
+        analyser = null;
+        visualizedAudio = null;
+    }
+
     function startVisualizer(wrapper, audio) {
         const canvas = wrapper.querySelector('.visualizer');
         const ctx = canvas && canvas.getContext('2d');
@@ -253,6 +275,7 @@ function initPlayers() {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
                 audioContext = audioContext || new AudioCtx();
+                disconnectVisualizerNodes();
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = 128;
                 analyser.smoothingTimeConstant = 0.78;
@@ -317,6 +340,11 @@ function initPlayers() {
     function unloadPlayer(wrapper) {
         const audio = activePlayers.get(wrapper);
         if (!audio) return;
+
+        if (visualizedAudio === audio) {
+            stopVisualizer();
+            disconnectVisualizerNodes();
+        }
 
         audio.pause();
         audio.removeAttribute('src');
