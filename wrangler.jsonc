@@ -2,13 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "cyroz-net",
   "compatibility_date": "2026-06-28",
-  "workers_dev": false,
-  "routes": [
-    {
-      "pattern": "cyroz.net",
-      "custom_domain": true
-    }
-  ],
+  "workers_dev": true,
   "assets": {
     "directory": "./dist",
     "html_handling": "auto-trailing-slash",

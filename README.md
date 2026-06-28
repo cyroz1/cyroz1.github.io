@@ -34,20 +34,14 @@ Then visit `http://localhost:8080`.
 
 This repository is configured for Cloudflare Workers Static Assets in `wrangler.jsonc`.
 
-Commits to `main` deploy through `.github/workflows/deploy-worker.yml`. Add these repository secrets in GitHub before the first deploy:
-
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-
-The token needs permission to deploy Workers and configure the custom domain route for `cyroz.net`.
-
-If using Cloudflare's connected-repository builds instead of GitHub Actions:
+Commits to `main` deploy through Cloudflare Workers Builds. In Cloudflare:
 
 1. In Cloudflare, create a Worker connected to this GitHub repository.
 2. Use `/` as the root directory.
 3. Use `npm run deploy` as the deploy command.
-4. Keep `cyroz.net` on Cloudflare DNS so the `custom_domain` route in `wrangler.jsonc` can attach to the Worker.
-5. After the Worker deployment is live, disable GitHub Pages for this repository.
+4. After the Worker deployment is live, disable GitHub Pages for this repository.
+
+To serve `cyroz.net`, add the domain to Cloudflare DNS, update the registrar nameservers to Cloudflare's nameservers, and then attach `cyroz.net` to the `cyroz-net` Worker from the Worker's **Domains** tab.
 
 For a local deploy validation without publishing:
 
