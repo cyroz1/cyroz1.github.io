@@ -8,6 +8,8 @@ const CONFIG = {
 
 const PAYPAL_ICON = `<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/></svg>`;
 const LINK_ICON = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.43"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.33-1.33"/></svg>`;
+const OSCILLOSCOPE_FPS = 60;
+const OSCILLOSCOPE_FRAME_MS = 1000 / OSCILLOSCOPE_FPS;
 
 function beatNameFromFile(filename) {
     return filename.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -208,7 +210,7 @@ function initPlayers() {
     let sourceNode = null;
     let animationFrame = null;
     let visualizedAudio = null;
-    const frequencyData = new Uint8Array(64);
+    let waveformData = new Uint8Array(2048);
 
     function formatTime(seconds) {
         if (!Number.isFinite(seconds)) return '0:00';
@@ -217,24 +219,98 @@ function initPlayers() {
         return `${mins}:${secs}`;
     }
 
-    function drawIdleVisualizer(canvas) {
+    function prepareVisualizerCanvas(canvas) {
         const ctx = canvas && canvas.getContext('2d');
-        if (!ctx) return;
-        const width = canvas.width;
-        const height = canvas.height;
-        const bars = 28;
-        const gap = 4;
-        const barWidth = (width - gap * (bars - 1)) / bars;
+        if (!ctx) return null;
 
-        ctx.clearRect(0, 0, width, height);
-        for (let i = 0; i < bars; i++) {
-            const wave = Math.sin((i / bars) * Math.PI * 2);
-            const barHeight = 6 + Math.abs(wave) * 18;
-            const x = i * (barWidth + gap);
-            const y = (height - barHeight) / 2;
-            ctx.fillStyle = `rgba(240, 192, 64, ${0.18 + Math.abs(wave) * 0.18})`;
-            ctx.fillRect(x, y, barWidth, barHeight);
+        const ratio = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+        const width = Math.max(1, Math.round(canvas.clientWidth || canvas.width));
+        const height = Math.max(1, Math.round(canvas.clientHeight || canvas.height));
+        const scaledWidth = Math.round(width * ratio);
+        const scaledHeight = Math.round(height * ratio);
+
+        if (canvas.width !== scaledWidth || canvas.height !== scaledHeight) {
+            canvas.width = scaledWidth;
+            canvas.height = scaledHeight;
         }
+
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        return { ctx, width, height };
+    }
+
+    function drawOscilloscopeGrid(ctx, width, height) {
+        const centerY = height / 2;
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.fillStyle = 'rgba(2, 2, 2, 0.2)';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(240, 192, 64, 0.08)';
+        ctx.beginPath();
+        for (let x = 0; x <= width; x += width / 8) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+        }
+        for (let y = height / 4; y <= height; y += height / 4) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(240, 192, 64, 0.2)';
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(width, centerY);
+        ctx.stroke();
+    }
+
+    function drawOscilloscopeTrace(ctx, width, height, data) {
+        const centerY = height / 2;
+        const amplitude = height * 0.42;
+
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = 'rgba(240, 192, 64, 0.52)';
+        ctx.shadowBlur = 7;
+        ctx.strokeStyle = 'rgba(255, 219, 92, 0.92)';
+        ctx.beginPath();
+
+        if (!data) {
+            const points = 80;
+            for (let i = 0; i < points; i++) {
+                const x = (i / (points - 1)) * width;
+                const y = centerY + Math.sin(i * 0.42) * height * 0.06;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+        } else {
+            const step = Math.max(1, Math.floor(data.length / Math.max(width, 1)));
+            const points = Math.floor(data.length / step);
+            for (let i = 0; i < points; i++) {
+                const sample = data[i * step] / 128 - 1;
+                const x = (i / Math.max(points - 1, 1)) * width;
+                const y = centerY + sample * amplitude;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+        }
+
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawOscilloscope(canvas, data = null) {
+        const prepared = prepareVisualizerCanvas(canvas);
+        if (!prepared) return;
+        const { ctx, width, height } = prepared;
+        drawOscilloscopeGrid(ctx, width, height);
+        drawOscilloscopeTrace(ctx, width, height, data);
+    }
+
+    function drawIdleVisualizer(canvas) {
+        drawOscilloscope(canvas);
     }
 
     function stopVisualizer() {
@@ -267,8 +343,7 @@ function initPlayers() {
 
     function startVisualizer(wrapper, audio) {
         const canvas = wrapper.querySelector('.visualizer');
-        const ctx = canvas && canvas.getContext('2d');
-        if (!ctx) return;
+        if (!canvas) return;
 
         if (visualizedAudio !== audio) {
             try {
@@ -277,8 +352,9 @@ function initPlayers() {
                 audioContext = audioContext || new AudioCtx();
                 disconnectVisualizerNodes();
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 128;
-                analyser.smoothingTimeConstant = 0.78;
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = 0.15;
+                waveformData = new Uint8Array(analyser.fftSize);
                 sourceNode = audio._sourceNode || audioContext.createMediaElementSource(audio);
                 audio._sourceNode = sourceNode;
                 sourceNode.connect(analyser);
@@ -293,26 +369,14 @@ function initPlayers() {
 
         if (audioContext.state === 'suspended') audioContext.resume();
 
-        const width = canvas.width;
-        const height = canvas.height;
+        let lastFrameTime = 0;
 
-        function render() {
+        function render(now = 0) {
             animationFrame = requestAnimationFrame(render);
-            analyser.getByteFrequencyData(frequencyData);
-            ctx.clearRect(0, 0, width, height);
-
-            const bars = 32;
-            const gap = 3;
-            const barWidth = (width - gap * (bars - 1)) / bars;
-
-            for (let i = 0; i < bars; i++) {
-                const value = frequencyData[i] / 255;
-                const barHeight = Math.max(4, value * height * 0.92);
-                const x = i * (barWidth + gap);
-                const y = height - barHeight;
-                ctx.fillStyle = `rgba(240, 192, 64, ${0.28 + value * 0.72})`;
-                ctx.fillRect(x, y, barWidth, barHeight);
-            }
+            if (now - lastFrameTime < OSCILLOSCOPE_FRAME_MS) return;
+            lastFrameTime = now - ((now - lastFrameTime) % OSCILLOSCOPE_FRAME_MS);
+            analyser.getByteTimeDomainData(waveformData);
+            drawOscilloscope(canvas, waveformData);
         }
 
         stopVisualizer();
