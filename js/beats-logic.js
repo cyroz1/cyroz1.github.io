@@ -10,6 +10,9 @@ const PAYPAL_ICON = `<svg class="btn-icon" viewBox="0 0 24 24" fill="currentColo
 const LINK_ICON = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.83-2.83a5 5 0 0 0-7.07-7.07L11.5 4.43"/><path d="M14 11a5 5 0 0 0-7.07 0L4.1 13.83a5 5 0 0 0 7.07 7.07l1.33-1.33"/></svg>`;
 const OSCILLOSCOPE_FPS = 60;
 const OSCILLOSCOPE_FRAME_MS = 1000 / OSCILLOSCOPE_FPS;
+const OSCILLOSCOPE_CENTER = 128;
+const OSCILLOSCOPE_TRIGGER_HYSTERESIS = 4;
+const OSCILLOSCOPE_WINDOW_SAMPLES = 960;
 
 function beatNameFromFile(filename) {
     return filename.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -265,6 +268,19 @@ function initPlayers() {
         ctx.stroke();
     }
 
+    function findOscilloscopeTrigger(data, windowSize) {
+        const maxStart = Math.max(0, data.length - windowSize - 1);
+        const low = OSCILLOSCOPE_CENTER - OSCILLOSCOPE_TRIGGER_HYSTERESIS;
+
+        for (let i = 1; i < maxStart; i++) {
+            if (data[i - 1] < low && data[i] >= OSCILLOSCOPE_CENTER) {
+                return i;
+            }
+        }
+
+        return 0;
+    }
+
     function drawOscilloscopeTrace(ctx, width, height, data) {
         const centerY = height / 2;
         const amplitude = height * 0.42;
@@ -286,11 +302,15 @@ function initPlayers() {
                 else ctx.lineTo(x, y);
             }
         } else {
-            const step = Math.max(1, Math.floor(data.length / Math.max(width, 1)));
-            const points = Math.floor(data.length / step);
+            const windowSize = Math.min(OSCILLOSCOPE_WINDOW_SAMPLES, data.length);
+            const triggerIndex = findOscilloscopeTrigger(data, windowSize);
+            const points = Math.max(2, Math.round(width));
+            const sampleStep = (windowSize - 1) / (points - 1);
+
             for (let i = 0; i < points; i++) {
-                const sample = data[i * step] / 128 - 1;
-                const x = (i / Math.max(points - 1, 1)) * width;
+                const sampleIndex = Math.min(data.length - 1, Math.round(triggerIndex + i * sampleStep));
+                const sample = data[sampleIndex] / OSCILLOSCOPE_CENTER - 1;
+                const x = (i / (points - 1)) * width;
                 const y = centerY + sample * amplitude;
                 if (i === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
