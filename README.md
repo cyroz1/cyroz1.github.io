@@ -34,7 +34,13 @@ Then visit `http://localhost:8080`.
 
 This repository is configured for Cloudflare Workers Static Assets in `wrangler.jsonc`.
 
-Commits to `main` deploy through Cloudflare Workers Builds. In Cloudflare:
+Commits to `main` deploy through the GitHub Actions workflow in `.github/workflows/deploy.yml`.
+Add these repository secrets in GitHub before relying on push deploys:
+
+- `CLOUDFLARE_ACCOUNT_ID` - the Cloudflare account ID that owns the Worker
+- `CLOUDFLARE_API_TOKEN` - a Cloudflare API token with permission to deploy Workers
+
+Alternatively, commits to `main` can deploy through Cloudflare Workers Builds. In Cloudflare:
 
 1. In Cloudflare, create a Worker connected to this GitHub repository.
 2. Use `/` as the root directory.

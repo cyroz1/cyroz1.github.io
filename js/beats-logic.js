@@ -11,9 +11,9 @@ const LINK_ICON = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke
 const OSCILLOSCOPE_FPS = 60;
 const OSCILLOSCOPE_FRAME_MS = 1000 / OSCILLOSCOPE_FPS;
 const OSCILLOSCOPE_CENTER = 128;
-const OSCILLOSCOPE_VISIBLE_SECONDS = 0.18;
-const OSCILLOSCOPE_HISTORY_SECONDS = 0.5;
-const OSCILLOSCOPE_SEEK_RESET_SECONDS = 0.25;
+const OSCILLOSCOPE_VISIBLE_SECONDS = 0.045;
+const OSCILLOSCOPE_HISTORY_SECONDS = 0.18;
+const OSCILLOSCOPE_SEEK_RESET_SECONDS = 0.12;
 
 function beatNameFromFile(filename) {
     return filename.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
