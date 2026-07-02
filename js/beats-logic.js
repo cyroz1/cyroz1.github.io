@@ -11,9 +11,14 @@ const LINK_ICON = `<svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke
 const OSCILLOSCOPE_FPS = 60;
 const OSCILLOSCOPE_FRAME_MS = 1000 / OSCILLOSCOPE_FPS;
 const OSCILLOSCOPE_CENTER = 128;
-const OSCILLOSCOPE_VISIBLE_SECONDS = 0.045;
-const OSCILLOSCOPE_HISTORY_SECONDS = 0.18;
-const OSCILLOSCOPE_SEEK_RESET_SECONDS = 0.12;
+const OSCILLOSCOPE_ANALYSER_FFT_SIZE = 4096;
+const OSCILLOSCOPE_VISIBLE_SECONDS = 0.04;
+const OSCILLOSCOPE_PRETRIGGER_SECONDS = 0.006;
+const OSCILLOSCOPE_TARGET_PEAK = 0.26;
+const OSCILLOSCOPE_MIN_PEAK = 0.025;
+const OSCILLOSCOPE_MIN_GAIN = 0.45;
+const OSCILLOSCOPE_MAX_GAIN = 5;
+const OSCILLOSCOPE_GAIN_SMOOTHING = 0.18;
 
 function beatNameFromFile(filename) {
     return filename.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -270,79 +275,93 @@ function initPlayers() {
         ctx.stroke();
     }
 
-    function createOscilloscopeState(sampleRate, audioTime = 0) {
-        const sampleCount = Math.max(2, Math.ceil(sampleRate * OSCILLOSCOPE_HISTORY_SECONDS));
+    function createOscilloscopeState(sampleRate) {
         return {
             sampleRate,
-            history: new Float32Array(sampleCount),
-            writeIndex: 0,
-            samplesWritten: 0,
-            lastAudioTime: audioTime,
-            fractionalSamples: 0,
+            gain: 1,
+            gainPrimed: false,
         };
     }
 
-    function resetOscilloscopeState(sampleRate, audioTime = 0) {
-        oscilloscopeState = createOscilloscopeState(sampleRate, audioTime);
+    function resetOscilloscopeState(sampleRate) {
+        oscilloscopeState = createOscilloscopeState(sampleRate);
         return oscilloscopeState;
     }
 
-    function appendOscilloscopeSamples(state, data, sampleCount) {
-        if (!state || !data || sampleCount <= 0) return;
-        const writableSamples = Math.min(sampleCount, data.length, state.history.length);
-        const readStart = data.length - writableSamples;
+    function normalizeOscilloscopeSample(data, sourceIndex) {
+        if (!data || data.length < 1) return 0;
 
-        for (let i = 0; i < writableSamples; i++) {
-            state.history[state.writeIndex] = data[readStart + i] / OSCILLOSCOPE_CENTER - 1;
-            state.writeIndex = (state.writeIndex + 1) % state.history.length;
+        const clampedIndex = Math.max(0, Math.min(data.length - 1, sourceIndex));
+        const leftIndex = Math.floor(clampedIndex);
+        const rightIndex = Math.min(data.length - 1, leftIndex + 1);
+        const blend = clampedIndex - leftIndex;
+        const value = data[leftIndex] + (data[rightIndex] - data[leftIndex]) * blend;
+        return value / OSCILLOSCOPE_CENTER - 1;
+    }
+
+    function findOscilloscopeTriggerIndex(data, visibleSamples, pretriggerSamples) {
+        if (!data || data.length < 2) return 0;
+
+        const minTrigger = Math.max(1, Math.ceil(pretriggerSamples) + 1);
+        const maxTrigger = Math.max(
+            minTrigger,
+            data.length - visibleSamples + Math.floor(pretriggerSamples) - 2
+        );
+        const fallbackTrigger = Math.max(
+            minTrigger,
+            Math.min(maxTrigger, Math.round(data.length * 0.35))
+        );
+
+        for (let i = minTrigger; i <= maxTrigger; i++) {
+            const previous = data[i - 1] - OSCILLOSCOPE_CENTER;
+            const current = data[i] - OSCILLOSCOPE_CENTER;
+            if (previous > 0 || current <= 0) continue;
+
+            const before = data[Math.max(0, i - 4)];
+            const after = data[Math.min(data.length - 1, i + 4)];
+            if (after <= before) continue;
+
+            const delta = data[i] - data[i - 1];
+            const crossingOffset = delta ? (OSCILLOSCOPE_CENTER - data[i - 1]) / delta : 1;
+            return i - 1 + Math.max(0, Math.min(1, crossingOffset));
         }
 
-        state.samplesWritten = Math.min(state.history.length, state.samplesWritten + writableSamples);
+        return fallbackTrigger;
     }
 
-    function updateOscilloscopeHistory(state, data, audioTime) {
-        if (!state || !data || !Number.isFinite(audioTime)) return;
+    function measureOscilloscopePeak(data, startIndex, visibleSamples, points) {
+        let peak = 0;
+        const sampleStep = (visibleSamples - 1) / Math.max(1, points - 1);
 
-        const elapsedSeconds = audioTime - state.lastAudioTime;
-        if (!state.samplesWritten || elapsedSeconds < 0 || elapsedSeconds > OSCILLOSCOPE_SEEK_RESET_SECONDS) {
-            state.writeIndex = 0;
-            state.samplesWritten = 0;
-            state.fractionalSamples = 0;
-            appendOscilloscopeSamples(
-                state,
-                data,
-                Math.min(data.length, Math.ceil(state.sampleRate * OSCILLOSCOPE_VISIBLE_SECONDS))
-            );
-            state.lastAudioTime = audioTime;
-            return;
+        for (let i = 0; i < points; i++) {
+            const sample = normalizeOscilloscopeSample(data, startIndex + i * sampleStep);
+            peak = Math.max(peak, Math.abs(sample));
         }
 
-        const elapsedSamples = elapsedSeconds * state.sampleRate + state.fractionalSamples;
-        const samplesToAppend = Math.floor(elapsedSamples);
-        state.fractionalSamples = elapsedSamples - samplesToAppend;
-        appendOscilloscopeSamples(state, data, samplesToAppend);
-        state.lastAudioTime = audioTime;
+        return peak;
     }
 
-    function readOscilloscopeSample(state, distanceFromNewest) {
-        if (!state || state.samplesWritten < 1) return 0;
+    function updateOscilloscopeGain(state, peak) {
+        if (!state) return 1;
+        if (peak <= OSCILLOSCOPE_MIN_PEAK) return state.gain;
 
-        const maxDistance = state.samplesWritten - 1;
-        const clampedDistance = Math.min(Math.max(distanceFromNewest, 0), maxDistance);
-        const nearDistance = Math.floor(clampedDistance);
-        const farDistance = Math.min(maxDistance, nearDistance + 1);
-        const blend = clampedDistance - nearDistance;
-        const nearIndex = (state.writeIndex - 1 - nearDistance + state.history.length) % state.history.length;
-        const farIndex = (state.writeIndex - 1 - farDistance + state.history.length) % state.history.length;
-        const nearSample = state.history[nearIndex];
-        const farSample = state.history[farIndex];
+        const targetGain = Math.max(
+            OSCILLOSCOPE_MIN_GAIN,
+            Math.min(OSCILLOSCOPE_MAX_GAIN, OSCILLOSCOPE_TARGET_PEAK / peak)
+        );
 
-        return nearSample + (farSample - nearSample) * blend;
+        if (!state.gainPrimed) {
+            state.gain = targetGain;
+            state.gainPrimed = true;
+        } else {
+            state.gain += (targetGain - state.gain) * OSCILLOSCOPE_GAIN_SMOOTHING;
+        }
+
+        return state.gain;
     }
 
-    function drawOscilloscopeTrace(ctx, width, height, state) {
+    function drawOscilloscopeTrace(ctx, width, height, state, data = null) {
         const centerY = height / 2;
-        const amplitude = height * 0.42;
 
         ctx.lineWidth = 1.6;
         ctx.lineCap = 'round';
@@ -352,7 +371,7 @@ function initPlayers() {
         ctx.strokeStyle = 'rgba(255, 219, 92, 0.92)';
         ctx.beginPath();
 
-        if (!state || state.samplesWritten < 2) {
+        if (!state || !data || data.length < 2) {
             const points = 80;
             for (let i = 0; i < points; i++) {
                 const x = (i / (points - 1)) * width;
@@ -362,17 +381,27 @@ function initPlayers() {
             }
         } else {
             const visibleSamples = Math.min(
-                state.samplesWritten,
+                data.length,
                 Math.max(2, Math.round(state.sampleRate * OSCILLOSCOPE_VISIBLE_SECONDS))
             );
+            const pretriggerSamples = Math.min(
+                visibleSamples * 0.45,
+                Math.max(0, Math.round(state.sampleRate * OSCILLOSCOPE_PRETRIGGER_SECONDS))
+            );
             const points = Math.max(2, Math.round(width * 1.25));
+            const triggerIndex = findOscilloscopeTriggerIndex(data, visibleSamples, pretriggerSamples);
+            const startIndex = Math.max(
+                0,
+                Math.min(data.length - visibleSamples, triggerIndex - pretriggerSamples)
+            );
             const sampleStep = (visibleSamples - 1) / (points - 1);
+            const peak = measureOscilloscopePeak(data, startIndex, visibleSamples, points);
+            const gain = updateOscilloscopeGain(state, peak);
 
             for (let i = 0; i < points; i++) {
-                const distanceFromNewest = (points - 1 - i) * sampleStep + state.fractionalSamples;
-                const sample = readOscilloscopeSample(state, distanceFromNewest);
+                const sample = normalizeOscilloscopeSample(data, startIndex + i * sampleStep);
                 const x = (i / (points - 1)) * width;
-                const y = centerY + sample * amplitude;
+                const y = Math.max(2, Math.min(height - 2, centerY + sample * gain * height));
                 if (i === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
@@ -382,12 +411,12 @@ function initPlayers() {
         ctx.shadowBlur = 0;
     }
 
-    function drawOscilloscope(canvas, state = null) {
+    function drawOscilloscope(canvas, state = null, data = null) {
         const prepared = prepareVisualizerCanvas(canvas);
         if (!prepared) return;
         const { ctx, width, height } = prepared;
         drawOscilloscopeGrid(ctx, width, height);
-        drawOscilloscopeTrace(ctx, width, height, state);
+        drawOscilloscopeTrace(ctx, width, height, state, data);
     }
 
     function drawIdleVisualizer(canvas) {
@@ -434,7 +463,7 @@ function initPlayers() {
                 audioContext = audioContext || new AudioCtx();
                 disconnectVisualizerNodes();
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048;
+                analyser.fftSize = OSCILLOSCOPE_ANALYSER_FFT_SIZE;
                 analyser.smoothingTimeConstant = 0;
                 waveformData = new Uint8Array(analyser.fftSize);
                 sourceNode = audio._sourceNode || audioContext.createMediaElementSource(audio);
@@ -442,7 +471,7 @@ function initPlayers() {
                 sourceNode.connect(analyser);
                 analyser.connect(audioContext.destination);
                 visualizedAudio = audio;
-                resetOscilloscopeState(audioContext.sampleRate, audio.currentTime);
+                resetOscilloscopeState(audioContext.sampleRate);
             } catch (err) {
                 console.warn('Visualizer unavailable for this audio source:', err);
                 drawIdleVisualizer(canvas);
@@ -452,7 +481,7 @@ function initPlayers() {
 
         if (audioContext.state === 'suspended') audioContext.resume();
         if (!oscilloscopeState || oscilloscopeState.sampleRate !== audioContext.sampleRate) {
-            resetOscilloscopeState(audioContext.sampleRate, audio.currentTime);
+            resetOscilloscopeState(audioContext.sampleRate);
         }
 
         let lastFrameTime = 0;
@@ -462,8 +491,7 @@ function initPlayers() {
             if (now - lastFrameTime < OSCILLOSCOPE_FRAME_MS) return;
             lastFrameTime = now - ((now - lastFrameTime) % OSCILLOSCOPE_FRAME_MS);
             analyser.getByteTimeDomainData(waveformData);
-            updateOscilloscopeHistory(oscilloscopeState, waveformData, audio.currentTime);
-            drawOscilloscope(canvas, oscilloscopeState);
+            drawOscilloscope(canvas, oscilloscopeState, waveformData);
         }
 
         stopVisualizer();
